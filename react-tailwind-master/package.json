@@ -1,0 +1,51 @@
+{
+  "name": "react",
+  "homepage": "https://thecnh.co.uk",
+  "version": "1.0.0",
+  "description": "React example starter project",
+  "keywords": [
+    "react",
+    "starter"
+  ],
+  "main": "src/index.js",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build&& compress-cra -d ..\\..\\..\\Desktop\\react-tailwind-master\\react-tailwind-master\\build\\",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ],
+  "dependencies": {
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@headlessui/react": "^1.7.13",
+    "@material-ui/core": "4.12.4",
+    "@mui/icons-material": "5.8.4",
+    "@mui/material": "5.8.4",
+    "@paypal/react-paypal-js": "^7.8.2",
+    "@react-oauth/google": "^0.2.6",
+    "@tailwindcss/forms": "^0.5.3",
+    "@tailwindcss/line-clamp": "^0.4.2",
+    "autoprefixer": "^10.4.13",
+    "axios": "^0.27.2",
+    "compressorjs": "^1.2.1",
+    "moment": "^2.29.4",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-facebook-login": "^4.1.1",
+    "react-file-reader": "^1.1.4",
+    "react-router-dom": "6.3.0",
+    "react-scripts": "5.0.1",
+    "styled-components": "^6.0.0-rc.1",
+    "tailwindcss": "^3.3.2"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.4",
+    "postcss": "^8.4.12"
+  }
+}

@@ -1,0 +1,66 @@
+48 hours without response oh boy. Sooo
+Yesterday i did some testing to see what will trigger what and here are my results, in case someone will also need it. (to update docs for example :wink: )
+
+to answer my own question webhook response is always of the same format.
+
+now for the tests, here is the format:
+callback -> what i did -> YES/NO (yes means i got response, no means i didnt)
+
+member:update -> old(canceled) patron joins(pledges) -> YES
+
+member:update -> patron removes(cancels) pledge -> YES
+
+member:update -> completely new member pledges -> NOOO
+
+member:update -> patron ± changes pledge -> NO
+
+members:create -> oldPatreon pledges again -> NO
+
+member: create -> completely new member pledges -> YES
+
+members:pledge:update -> existing patron ± pledge -> YES
+
+members:pledge:update -> patron cancels pledge -> NOO
+
+members:pledge:update -> old(canceled) patron pledges -> NO
+
+members:pledge:create -> old user creates new pledges -> YES
+
+members:pledge:delete -> user cancels pledge -> YES BUT still shows amount pre cancel (WTF…ok not wtf useful if you want to keep track of what pledge you just lost)
+
+member:update -> patron follows even not pledging -> YES
+
+member:update -> follower pledges -> YES
+
+////////
+
+in conclusion:
+
+completely new user -> members:create (a)
+
+pledge± -> members:pledge:update (b)
+
+patreon removes pledge(cancels) -> member:update ( c)
+
+parton rejoins -> member:update ( c)
+
+So here you go.
+It would be nice to get some confirmation from the dev support team if my findings were correct.7
+
+
+
+
+// "react-material-ui-carousel": "3.4.2",
+    "react-ionicons": "^4.2.0",
+    "react-loading": "^2.0.3",
+    "react-social-icons": "^5.15.0",
+    "react-toggle-dark-mode": "^1.1.1",
+     "@date-io/dayjs": "^2.16.0",
+     "dayjs": "^1.11.6",
+       "countries-list": "^2.6.1",
+       "@mui/x-date-pickers": "^5.0.9",
+       "deep-email-validator": "^0.1.21",
+       "@emotion/react": "11.9.3",
+    "@emotion/styled": "11.9.3",
+    "styled-components": "5.3.5"
+    

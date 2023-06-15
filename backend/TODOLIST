@@ -1,0 +1,11 @@
+You have added isApproved in brands, add approve brand option in the front end and also handle the rest inside the server.js
+
+2 - Implement Points System throughtout the backend
+6 - Add a page for the latest products added
+7 - convert images to webp on front-end and then send them to backend
+8 - Https server instead of http
+10 - Add 2FA to the authentication
+11 - Add image compression on front end
+12 - improve backend sending responses by reducing the ammount of data transfered
+13 - async request for delivering images
+14 - add products to the admindashboard panel as soon as button clicks
