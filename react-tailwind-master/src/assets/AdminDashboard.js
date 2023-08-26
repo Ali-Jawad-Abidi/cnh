@@ -19,6 +19,8 @@ const SubcatsList = lazy(() => import("./SubcatsList.js"));
 const BrandsList = lazy(() => import("./BrandsList.js"));
 const MuseumsList = lazy(() => import("./MuseumsList.js"));
 const MerchCatList = lazy(() => import("./MerchCatList.js"));
+const UploadList = lazy(() => import("./UploadsList.js"));
+const SingleImageUpload = lazy(() => import("./SingleImageUpload"));
 
 function AddBlog(props) {
   var [showModal, setShowModal] = useState(false);
@@ -27,7 +29,6 @@ function AddBlog(props) {
   var [text, setText] = useState("");
   var [info, setInfo] = useState("");
   var [loading, setLoading] = useState(false);
-  var [thumbnail, setThumbnail] = useState();
 
   function onSubmit(e) {
     e.preventDefault();
@@ -39,7 +40,7 @@ function AddBlog(props) {
       date: moment().format("DD-MM-YYYY"),
       addedby: JSON.parse(localStorage.getItem("userid")),
       info: info,
-      thumbnail: thumbnail,
+      thumbnail: image,
     };
 
     var config = {
@@ -110,6 +111,9 @@ function AddBlog(props) {
                   Add Blog
                 </h3>
                 <form class="space-y-6" action="#">
+                  <div className="mx-auto">
+                    <SingleImageUpload image={image} onImageChange={setImage} />
+                  </div>
                   <div>
                     <input
                       type="text"
@@ -123,6 +127,16 @@ function AddBlog(props) {
                       }}
                     />
                   </div>
+
+                  <div>
+                    <textarea
+                      id="message"
+                      rows="1"
+                      class="bg-gray-90 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                      placeholder="Small info that tells what the blogs is about, a headliner"
+                      onChange={(e, v) => setInfo(e.target.value)}
+                    ></textarea>
+                  </div>
                   <div>
                     <textarea
                       id="message"
@@ -131,57 +145,6 @@ function AddBlog(props) {
                       placeholder="Description"
                       onChange={(e, v) => setText(e.target.value)}
                     ></textarea>
-                  </div>
-                  <div>
-                    <textarea
-                      id="message"
-                      rows="4"
-                      class="bg-gray-90 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                      placeholder="Small info that tells what the blogs is about, a headliner"
-                      onChange={(e, v) => setInfo(e.target.value)}
-                    ></textarea>
-                  </div>
-                  <div className="flex justify-evenly">
-                    <label className="px-5 w-1/2 text-sm cursor-pointer py-2 bg-blue-600 text-white rounded-lg">
-                      <input
-                        accept="image/*"
-                        type="file"
-                        className="hidden"
-                        onChange={(e) => {
-                          new Compressor(e.target.files[0], {
-                            quality: 0.8,
-                            maxHeight: 1200,
-                            maxWidth: 1600,
-                            mimeType: ["image/webp"], // 0.6 can also be used, but its not recommended to go below.
-                            success: (compressedResult) => {
-                              var reader = new FileReader();
-                              reader.readAsDataURL(compressedResult);
-                              reader.onloadend = function () {
-                                var base64String = reader.result;
-                                setImage(base64String);
-                              };
-                            },
-                          });
-
-                          new Compressor(e.target.files[0], {
-                            quality: 0.8,
-                            maxHeight: 500,
-                            maxWidth: 500,
-                            mimeType: ["image/webp"], // 0.6 can also be used, but its not recommended to go below.
-                            success: (compressedResult) => {
-                              var reader = new FileReader();
-                              reader.readAsDataURL(compressedResult);
-                              reader.onloadend = function () {
-                                var base64String = reader.result;
-                                setThumbnail(base64String);
-                              };
-                            },
-                          });
-                        }}
-                        required
-                      />
-                      Upload Images
-                    </label>
                   </div>
 
                   <button
@@ -207,7 +170,7 @@ function AddBlog(props) {
 function BlogList(props) {
   var [blogs, setBlogs] = useState([]);
   var [search, setSearch] = useState("");
-  var [showMore, setShowMore] = useState(true);
+  var [showMore, setShowMore] = useState(false);
 
   function fetchBlogs() {
     var config = {
@@ -701,6 +664,8 @@ function RightPanel(props) {
     return <BrandsList unapproved />;
   } else if (props.page === "MerchCatList") {
     return <MerchCatList />;
+  } else if (props.page === "Uploads") {
+    return <UploadList />;
   }
 }
 
@@ -729,21 +694,22 @@ export default function AdminDashboard() {
   }, []);
 
   if (isAdmin === 2) {
-    return (
-      <div className="dark:bg-gray-900">
-        <div className="min-h-screen">
-          <Header />
-          <p className="dark:text-white mt-5 mx-auto text-center text-8xl font-bold">
-            404
-          </p>
+    window.location = "/";
+    // return (
+    //   <div className="dark:bg-gray-900">
+    //     <div className="min-h-screen">
+    //       <Header />
+    //       <p className="dark:text-white mt-5 mx-auto text-center text-8xl font-bold">
+    //         404
+    //       </p>
 
-          <p className="dark:text-white mx-auto text-center text-xl font-bold">
-            The page you are looking for does not exist
-          </p>
-        </div>
-        <Footer />
-      </div>
-    );
+    //       <p className="dark:text-white mx-auto text-center text-xl font-bold">
+    //         The page you are looking for does not exist
+    //       </p>
+    //     </div>
+    //     <Footer />
+    //   </div>
+    // );
   }
 
   const menupanel = createRef(null);
@@ -814,6 +780,10 @@ export default function AdminDashboard() {
                   <span className="ml-3">Dashboard</span>
                 </div>
               </li>
+              <p className="text-lg font-bold text-left dark:text-white">
+                NostalgiaBase
+              </p>
+              <hr />
               <li>
                 <div
                   onClick={() => {
@@ -836,76 +806,6 @@ export default function AdminDashboard() {
                   </span>
                 </div>
               </li>
-              <li>
-                <div
-                  onClick={() => {
-                    setCurrentPage("Orders");
-                    displayMenu();
-                  }}
-                  className="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  <svg
-                    aria-hidden="true"
-                    className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M8.707 7.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414L11 7.586V3a1 1 0 10-2 0v4.586l-.293-.293z"></path>
-                    <path d="M3 5a2 2 0 012-2h1a1 1 0 010 2H5v7h2l1 2h4l1-2h2V5h-1a1 1 0 110-2h1a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"></path>
-                  </svg>
-                  <span className="flex-1 ml-3 text-left whitespace-nowrap">
-                    Orders
-                  </span>
-                </div>
-              </li>
-              <li>
-                <div
-                  onClick={() => {
-                    setCurrentPage("Blogs");
-                    displayMenu();
-                  }}
-                  className="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  <svg
-                    aria-hidden="true"
-                    className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M8.707 7.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414L11 7.586V3a1 1 0 10-2 0v4.586l-.293-.293z"></path>
-                    <path d="M3 5a2 2 0 012-2h1a1 1 0 010 2H5v7h2l1 2h4l1-2h2V5h-1a1 1 0 110-2h1a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"></path>
-                  </svg>
-                  <span className="flex-1 ml-3 text-left whitespace-nowrap">
-                    Blogs
-                  </span>
-                </div>
-              </li>
-              <li>
-                <div
-                  onClick={() => {
-                    setCurrentPage("Products");
-                    displayMenu();
-                  }}
-                  className="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  <svg
-                    aria-hidden="true"
-                    className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M8.707 7.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414L11 7.586V3a1 1 0 10-2 0v4.586l-.293-.293z"></path>
-                    <path d="M3 5a2 2 0 012-2h1a1 1 0 010 2H5v7h2l1 2h4l1-2h2V5h-1a1 1 0 110-2h1a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"></path>
-                  </svg>
-                  <span className="flex-1 ml-3 text-left whitespace-nowrap">
-                    Products
-                  </span>
-                </div>
-              </li>
-
               <li>
                 <div
                   onClick={() => {
@@ -1058,6 +958,80 @@ export default function AdminDashboard() {
               <li>
                 <div
                   onClick={() => {
+                    setCurrentPage("Blogs");
+                    displayMenu();
+                  }}
+                  className="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M8.707 7.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414L11 7.586V3a1 1 0 10-2 0v4.586l-.293-.293z"></path>
+                    <path d="M3 5a2 2 0 012-2h1a1 1 0 010 2H5v7h2l1 2h4l1-2h2V5h-1a1 1 0 110-2h1a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"></path>
+                  </svg>
+                  <span className="flex-1 ml-3 text-left whitespace-nowrap">
+                    Blogs
+                  </span>
+                </div>
+              </li>
+              <p className="text-lg font-bold text-left dark:text-white">
+                Store
+              </p>
+              <hr />
+              <li>
+                <div
+                  onClick={() => {
+                    setCurrentPage("Products");
+                    displayMenu();
+                  }}
+                  className="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M8.707 7.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414L11 7.586V3a1 1 0 10-2 0v4.586l-.293-.293z"></path>
+                    <path d="M3 5a2 2 0 012-2h1a1 1 0 010 2H5v7h2l1 2h4l1-2h2V5h-1a1 1 0 110-2h1a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"></path>
+                  </svg>
+                  <span className="flex-1 ml-3 text-left whitespace-nowrap">
+                    Products
+                  </span>
+                </div>
+              </li>
+              <li>
+                <div
+                  onClick={() => {
+                    setCurrentPage("Orders");
+                    displayMenu();
+                  }}
+                  className="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M8.707 7.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414L11 7.586V3a1 1 0 10-2 0v4.586l-.293-.293z"></path>
+                    <path d="M3 5a2 2 0 012-2h1a1 1 0 010 2H5v7h2l1 2h4l1-2h2V5h-1a1 1 0 110-2h1a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"></path>
+                  </svg>
+                  <span className="flex-1 ml-3 text-left whitespace-nowrap">
+                    Orders
+                  </span>
+                </div>
+              </li>
+
+              <li>
+                <div
+                  onClick={() => {
                     setCurrentPage("MerchCatList");
                     displayMenu();
                   }}
@@ -1075,6 +1049,33 @@ export default function AdminDashboard() {
                   </svg>
                   <span className="flex-1 ml-3 text-left whitespace-nowrap">
                     Product Categories
+                  </span>
+                </div>
+              </li>
+              <p className="text-lg font-bold text-left dark:text-white">
+                User Uploads
+              </p>
+              <hr />
+              <li>
+                <div
+                  onClick={() => {
+                    setCurrentPage("Uploads");
+                    displayMenu();
+                  }}
+                  className="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="flex-shrink-0 w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M8.707 7.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l2-2a1 1 0 00-1.414-1.414L11 7.586V3a1 1 0 10-2 0v4.586l-.293-.293z"></path>
+                    <path d="M3 5a2 2 0 012-2h1a1 1 0 010 2H5v7h2l1 2h4l1-2h2V5h-1a1 1 0 110-2h1a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"></path>
+                  </svg>
+                  <span className="flex-1 ml-3 text-left whitespace-nowrap">
+                    User Uploads
                   </span>
                 </div>
               </li>

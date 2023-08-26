@@ -24,7 +24,7 @@ export default function ListingPage(props) {
 
   function fetchData() {
     var config = {};
-    if (Id === undefined) {
+    if (Id === undefined || Id === null) {
       config = {
         method: "get",
         url: process.env.REACT_APP_API_BASE_URL + "/getallconsoles",
@@ -33,7 +33,9 @@ export default function ListingPage(props) {
         },
       };
       axios(config).then(function (response) {
+        console.log(response.data);
         if (response.status === 200) {
+          console.log(response.data);
           var arr = consoles === null ? [] : consoles;
           arr = arr.concat(response.data.consoles);
           setConsoles(arr);
@@ -51,6 +53,7 @@ export default function ListingPage(props) {
       };
       axios(config).then(function (response) {
         if (response.status === 200) {
+          console.log(response.data);
           var arr = consoles === null ? [] : consoles;
           arr = arr.concat(response.data.consoles);
           setConsoles(arr);
@@ -101,12 +104,14 @@ export default function ListingPage(props) {
     consoles !== null
       ? consoles.filter((con) => {
           return (
-            (releaseType.length === 0 ||
+            ((releaseType.length === 0 ||
               releaseType.includes(con.releasetype)) &&
-            (regionalcode.length === 0 ||
-              regionalcode.includes(con.regionalcode)) &&
-            (color.length === 0 || color.includes(con.color)) &&
-            (country.length === 0 || country.includes(con.country)) &&
+              (regionalcode.length === 0 ||
+                regionalcode.includes(con.regionalcode)) &&
+              (color.length === 0 || color.includes(con.color)) &&
+              (country.length === 0 || country.includes(con.country)) &&
+              Id === null) ||
+            Id === undefined ||
             consoleType === con.type
           );
         })

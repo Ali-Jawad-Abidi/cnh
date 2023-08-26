@@ -32,7 +32,7 @@ export default function Carousel(props) {
   // }, []);
 
   return (
-    <div className="max-w-[1400px] max-h-[780px] w-full m-auto p-4 relative group">
+    <div className="w-full m-auto relative group">
       <div
         // style={{ backgroundImage: `url(${slides[currentIndex].url})` }}
         className="w-full h-full rounded-2xl bg-center bg-cover duration-500"

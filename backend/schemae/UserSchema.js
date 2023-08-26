@@ -71,7 +71,7 @@ const UserSchema = new mongoose.Schema({
   ],
   bitshistory: [
     {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
     },
   ],
 
@@ -102,6 +102,32 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     required: true,
     default: false,
+  },
+  twoFactorEnabled: {
+    type: Boolean,
+    default: true,
+  },
+  twoFactorSetup: {
+    type: Boolean,
+    default: false,
+  },
+  isPatreonMember: {
+    type: Boolean,
+    default: false,
+  },
+  pledgeAmount: {
+    type: Number,
+  },
+  joinedDate: {
+    type: Date,
+    default: null,
+  },
+  otpauth_url: {
+    type: String,
+    default: "",
+  },
+  twoFactorSecret: {
+    type: String,
   },
 });
 

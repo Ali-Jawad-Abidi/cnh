@@ -10,7 +10,7 @@ import React from "react";
 import Breadcrumb from "./BreadCrumb";
 import { useLocation } from "react-router-dom";
 
-function DesktopLightBox(props) {
+export function DesktopLightBox(props) {
   var images = props.item.images;
   var [previewImg, setPreviewImg] = useState(images[0]);
   var thumbnails = props.item.images;
@@ -82,6 +82,7 @@ function DesktopLightBox(props) {
 }
 
 function MobileSlider(props) {
+  console.log(props);
   var images = props.item.images;
   var [currentIndex, setCurrentIndex] = useState(0);
   var [previewImg, setPreviewImg] = useState(images[currentIndex]);
@@ -156,15 +157,22 @@ function DesktopPreview(props) {
 
 function ProductDetails(props) {
   var title = props.item.title;
-  var price = props.item.price;
   var discount = props.item.discount;
+  const [bitsLimit, setBitsLimit] = useState(props.item.bitsLimit);
+  var bits = props.item.bits;
   var description = props.item.description;
   var images = props.item.images;
   const addCart = props.addCart;
   var totalQuantity = props.item.quantity;
+  var [bitsSpent, setBitsSpent] = useState(0);
   var link = props.item.link;
+  var [showComboBox, setShowComboBox] = useState(false);
+  const [userBits, setUserBits] = useState(0);
 
   var [quantity, setQuantity] = useState(1);
+  var price = props.item.price - bitsSpent / 2;
+
+  var bitsLimitToShow = bitsLimit * quantity;
   return (
     <>
       <h2 className="company uppercase text-blue-700 font-bold text-sm sm:text-md tracking-wider pb-3 sm:pb-5">
@@ -181,7 +189,7 @@ function ProductDetails(props) {
         {description}
       </p>
 
-      {link.length > 0 && (
+      {link && link.length > 0 && (
         <a
           href={link}
           className="text-blue text-sm text-left underline cursor-pointer dark:text-blue-600"
@@ -198,24 +206,36 @@ function ProductDetails(props) {
           >
             ${price - price * (discount / 100)}
           </div>
-          <div className="discount text-blue-700 bg-blue-200 w-max px-2 rounded mx-5 h-6">
-            {discount + "% off"}
+
+          {discount > 0 && (
+            <div className="discount text-blue-700 bg-blue-200 w-max px-2 rounded mx-5 h-6">
+              {discount + "% off"}
+            </div>
+          )}
+        </div>
+        {discount > 0 && (
+          <div className="original-price text-grayish-blue line-through lg:mt-2">
+            ${price}
           </div>
-        </div>
-        <div className="original-price text-grayish-blue line-through lg:mt-2">
-          ${price}
-        </div>
+        )}
       </div>
-      <div className="sm:flex lg:mt-8 w-full">
-        <div className="quantity-container w-full bg-light-grayish-blue rounded-lg h-14 mb-4 flex items-center justify-between px-6 lg:px-3 font-bold sm:mr-3 lg:mr-5 lg:w-1/3">
-          <button
+      <div className="sm:flex lg:mt-8 flex-col w-full">
+        <label
+          for="small-input"
+          class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+        >
+          Quantity
+        </label>
+
+        <div className="quantity-container w-full bg-light-grayish-blue rounded-lg h-14 mb-4 flex items-center justify-between font-bold sm:mr-3 lg:mr-5 lg:w-1/3">
+          {/* <button
             onClick={() => {
               setQuantity(quantity !== 1 ? quantity - 1 : 1);
             }}
             className="text-blue-700 text-2xl leading-none font-bold mb-1 lg:mb-2 lg:text-3xl hover:opacity-60"
           >
             -
-          </button>
+          </button> */}
           <input
             // ref={productQuantityRef}
             min={1}
@@ -223,13 +243,20 @@ function ProductDetails(props) {
             // onChange={(e, v) => {
             //   console.log(e, v);
             // }}
-            className="quantity focus:outline-none text-dark-blue bg-light-grayish-blue font-bold flex text-center w-full dark:text-white dark:bg-gray-800"
+            className="dark:bg-gray-800 block border rounded-md shadow-sm focus:ring focus:ring-opacity-50 focus:ring-blue-300"
             type="number"
             name="quantity"
             value={quantity}
             aria-label="quantity number"
+            onChange={(e) => {
+              if (e.target.value > totalQuantity) {
+                setQuantity(totalQuantity);
+              } else if (e.target.value < 0) {
+                setQuantity(0);
+              } else setQuantity(e.target.value);
+            }}
           />
-          <button
+          {/* <button
             onClick={() => {
               setQuantity(
                 quantity !== totalQuantity ? quantity + 1 : totalQuantity
@@ -238,28 +265,106 @@ function ProductDetails(props) {
             className="text-blue-700 text-2xl leading-none font-bold mb-1 lg:mb-2 lg:text-3xl hover:opacity-60"
           >
             +
-          </button>
+          </button> */}
         </div>
 
-        <button
-          onClick={(e) => {
-            var newItem = {
-              id: props.item._id,
-              title: title,
-              img: images[0],
-              price: price,
-              discount: discount,
-              quantity: quantity,
-            };
-            addCart(newItem);
-          }}
-          className="cart w-full h-14 bg-blue-700 rounded-lg lg:rounded-xl mb-2 shadow-bg-blue-700 shadow-2xl text-white flex items-center justify-center lg:w-3/5 hover:opacity-60"
-        >
-          <i className="cursor-pointer text-white text-xl leading-0 pr-3">
-            <ion-icon name="cart-outline"></ion-icon>
-          </i>
-          Add to cart
-        </button>
+        <div className="flex flex-row w-full gap-2">
+          {!showComboBox ? (
+            <>
+              <button
+                onClick={(e) => {
+                  var newItem = {
+                    id: props.item._id,
+                    title: title,
+                    img: images[0],
+                    price: price,
+                    discount: discount,
+                    quantity: quantity,
+                    bitsSpent: 0,
+                  };
+                  addCart(newItem);
+                }}
+                className="cart w-full h-14 bg-blue-700 rounded-lg lg:rounded-xl mb-2 shadow-bg-blue-700 shadow-2xl text-white flex items-center justify-center lg:w-3/5 hover:opacity-60"
+              >
+                <i className="cursor-pointer text-white text-xl leading-0 pr-3">
+                  <ion-icon name="cart-outline"></ion-icon>
+                </i>
+                Add to cart
+              </button>
+
+              <button
+                onClick={(e) => {
+                  setShowComboBox(true);
+                  var config = {
+                    method: "get",
+                    url: process.env.REACT_APP_API_BASE_URL + "/bits",
+                    params: { id: JSON.parse(localStorage.getItem("userid")) },
+                  };
+                  axios(config).then((response) => {
+                    if (response.status === 200) {
+                      var Items =
+                        JSON.parse(localStorage.getItem("cart")) || [];
+
+                      var t = 0;
+                      Items.map((item) => {
+                        t = t + item.bitsSpent;
+                      });
+                      setUserBits(parseInt(response.data) - t);
+                    } else {
+                      setUserBits(0);
+                    }
+                  });
+                }}
+                className="cart w-full h-14 bg-blue-700 rounded-lg lg:rounded-xl mb-2 shadow-bg-blue-700 shadow-2xl text-white flex items-center justify-center lg:w-3/5 hover:opacity-60"
+              >
+                <i className="cursor-pointer text-white text-xl leading-0 pr-3">
+                  <ion-icon name="cart-outline"></ion-icon>
+                </i>
+                Use Bits
+              </button>
+            </>
+          ) : (
+            <div className="flex flex-col w-full">
+              <label className="text-left block text-sm font-medium dark:text-white">
+                Bits Spent, Max bits to be spent: (
+                {Math.min(bitsLimitToShow, userBits)})
+              </label>
+              <div className="flex flex-row gap-2 justify-evenly w-full">
+                <input
+                  type="number"
+                  className="dark:bg-gray-800 block h-14 w-full border rounded-md shadow-sm focus:ring focus:ring-opacity-50 focus:ring-blue-300"
+                  value={bitsSpent}
+                  onChange={(e) => {
+                    setBitsSpent(e.target.value);
+                  }}
+                  min={0}
+                  max={Math.min(bitsLimitToShow, userBits)}
+                />
+
+                <button
+                  onClick={(e) => {
+                    var newItem = {
+                      id: props.item._id,
+                      title: title,
+                      img: images[0],
+                      price: price,
+                      discount: discount,
+                      quantity: quantity,
+                      bitsSpent: bitsSpent,
+                    };
+                    addCart(newItem);
+                  }}
+                  className="cart w-full h-14 bg-blue-700 rounded-lg lg:rounded-xl mb-2 shadow-bg-blue-700 shadow-2xl text-white flex items-center justify-center lg:w-3/5 hover:opacity-60"
+                >
+                  <i className="cursor-pointer text-white text-xl leading-0 pr-3">
+                    <ion-icon name="cart-outline"></ion-icon>
+                  </i>
+                  Add to cart
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       <div className="flex flex-row gap-2 justify-evenly">
         {localStorage.getItem("userid") === null && (
@@ -271,49 +376,35 @@ function ProductDetails(props) {
           </Link>
         )}
         {localStorage.getItem("userid") !== null && (
-          <Link
-            className="cart w-full py-4 bg-blue-700 rounded-lg lg:rounded-xl shadow-bg-blue-700 text-white hover:opacity-60"
-            to={"/checkout"}
-          >
-            Go to Checkout
-          </Link>
+          <>
+            {showComboBox ? (
+              <div className="flex flex-row gap-2 w-full justify-evenly">
+                <button
+                  className="bg-red-600 w-full rounded-lg hover:bg-red-800"
+                  onClick={() => {
+                    setShowComboBox(false);
+                  }}
+                >
+                  Cancel
+                </button>
+                <Link
+                  className="cart w-full py-4 bg-blue-700 rounded-lg lg:rounded-xl shadow-bg-blue-700 text-white hover:opacity-60"
+                  to={"/checkout"}
+                >
+                  Go to Checkout
+                </Link>
+              </div>
+            ) : (
+              <Link
+                className="cart w-full py-4 bg-blue-700 rounded-lg lg:rounded-xl shadow-bg-blue-700 text-white hover:opacity-60"
+                to={"/checkout"}
+              >
+                Go to Checkout
+              </Link>
+            )}
+          </>
         )}
       </div>
-
-      {/* <div className="fixed bottom-10 right-10">
-        <div className="right">
-          <div className="user-bar flex items-center">
-            <div className="cart-container">
-              <div className="cart-wrapper mx-3 lg:mx-8 lg:mt-2 relative">
-                <i
-                  onClick={() => {
-                    cartDisplay();
-                  }}
-                  className={
-                    "cursor-pointer text-6xl !leading-none lg:text-6xl transition-colors " +
-                    (showCart
-                      ? "text-very-dark-blue dark:text-grayish-blue"
-                      : "text-grayish-blue dark:-very-dark-blue")
-                  }
-                >
-                  <ion-icon name="cart-outline"></ion-icon>
-                  <div>
-                    <span class="absolute top-0 -right-1 w-6 h-6 bg-white text-red-900 text-xl font-medium  rounded-full dark:bg-white dark:text-red-900">
-                      {quantityCount}
-                    </span>
-                  </div>
-                </i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      {showCart && <Cart />} */}
-      {/* {merch.map((item, index) => (
-        <Grid item xs={6} sm={6} md={4}>
-          <EcomCard item={item} />
-        </Grid>
-      ))} */}
     </>
   );
 }
@@ -362,6 +453,8 @@ export default function MerchPage() {
 
     axios(config).then(function (response) {
       setProduct(response.data.items);
+      console.log(response.data);
+      console.log(productId);
     });
   }, []);
 

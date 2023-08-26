@@ -69,9 +69,6 @@ export default function LoginButtons() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log(email);
-    console.log(country);
-    alert("Hello");
 
     if (
       email === null ||
@@ -96,8 +93,8 @@ export default function LoginButtons() {
       };
 
       axios(config).then(function (res) {
+        console.log(res);
         if (res.status === 200 && res.data.token) {
-          console.log(res.data);
           localStorage.setItem("token", JSON.stringify(res.data.token));
           localStorage.setItem("userid", JSON.stringify(res.data.id));
           localStorage.setItem("username", JSON.stringify(res.data.username));
@@ -106,6 +103,8 @@ export default function LoginButtons() {
           } else {
             window.location = "/";
           }
+        } else if (res.status === 201) {
+          alert(res.data.errormsg);
         }
       });
 
@@ -130,7 +129,28 @@ export default function LoginButtons() {
       setAccesToken(response.accessToken);
       setPassword(response.id);
 
-      setIsPromptOpen(true);
+      var config = {
+        method: "get",
+        url: process.env.REACT_APP_API_BASE_URL + "/checkfacebook",
+        params: { name: response.name, id: response.id },
+      };
+      axios(config).then((r) => {
+        console.log(r.data);
+        if (r.status === 200) {
+          if (r.data.exists) {
+            localStorage.setItem("token", JSON.stringify(r.data.token));
+            localStorage.setItem("userid", JSON.stringify(r.data.id));
+            localStorage.setItem("username", JSON.stringify(r.data.username));
+            if ("redirectTo" in localStorage) {
+              window.location = JSON.parse(localStorage.getItem("redirectTo"));
+            } else {
+              window.location = "/";
+            }
+          } else {
+            setIsPromptOpen(true);
+          }
+        }
+      });
     }
   };
 

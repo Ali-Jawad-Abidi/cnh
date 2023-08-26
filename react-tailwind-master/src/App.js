@@ -6,6 +6,7 @@ import Logout from "./assets/Logout";
 import Loading from "./assets/Loading";
 import LatestConsoles from "./assets/LatestConsoles";
 import VerifyEmail from "./assets/VerifyEmailPage";
+// import SnakeGame from "./assets/Snake";
 
 const Nostalgiabase = lazy(() => import("./assets/Nostalgiabase"));
 const SigninPage = lazy(() => import("./assets/SigninPage"));
@@ -29,6 +30,7 @@ const PatreonLinking = lazy(() => import("./assets/PatreonLinking"));
 const ForgotPassword = lazy(() => import("./assets/ForgotPassword.js"));
 const ResetPassword = lazy(() => import("./assets/ResetPassword"));
 const ProfilePage = lazy(() => import("./assets/ProfilePage"));
+const BitsLog = lazy(() => import("./assets/BitsLog"));
 // import PopUp from "./assets/PopUp";
 
 export default function App() {
@@ -36,6 +38,8 @@ export default function App() {
     // <ProductProvider>
     <div className="App bg-white dark:bg-gray-900">
       {/* <PopUp /> */}
+      {/* <SnakeGame /> */}
+
       <Suspense fallback={<Loading />}>
         <Routes>
           <Route exact path="/" element={<HomePage page="Home" />} />
@@ -69,6 +73,7 @@ export default function App() {
                 path="/approveconsole/:id"
                 element={<ProductDisplayPage />}
               />
+              <Route exact path="/bitslog" index element={<BitsLog />} />
             </>
           )}
           <Route
@@ -84,9 +89,16 @@ export default function App() {
           />
           <Route
             exact
-            path="/productgrid/"
+            path="/productgrid"
             element={<ListingPage cat="console" />}
           />
+
+          <Route
+            exact
+            path="/productgrid/:con"
+            element={<ProductDisplayPage />}
+          />
+          <Route exact path="/latest/:con" element={<ProductDisplayPage />} />
           <Route
             exact
             path="/nostalgiabase/:brand/:subcat"
@@ -114,7 +126,7 @@ export default function App() {
             element={<AdminDashboard />}
           />
           <Route exact path="/latest" index element={<LatestConsoles />} />
-          {/* <Route exact path="/verifyEmail" index element={<VerifyEmail />} /> */}
+          <Route exact path="/verifyEmail" index element={<VerifyEmail />} />
           <Route exact path="/patreon" index element={<PatreonLinking />} />
           <Route
             exact
@@ -129,6 +141,7 @@ export default function App() {
             index
             element={<ProfilePage />}
           />
+          <Route exact path="/bitslog" index element={<HomePage />} />
         </Routes>
       </Suspense>
     </div>

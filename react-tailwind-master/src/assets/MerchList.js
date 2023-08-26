@@ -1,7 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import ReactFileReader from "react-file-reader";
-import Compressor from "compressorjs";
+import ImageGrid from "./ImageGrid";
 import React from "react";
 
 export default function ProductList(props) {
@@ -178,8 +177,29 @@ function EditMerch(props) {
   var [discount, setDiscount] = useState(props.item.discount);
   var [description, setDescription] = useState(props.item.description);
   var [quantity, setQuantity] = useState(props.item.quantity);
-  var [images, setImages] = useState(props.item.images);
+  var [images, setImages] = useState(null);
   var [bits, setBits] = useState(props.item.bits);
+  var [thumbnail, setThumbnail] = useState("");
+  var [bitsLimit, setBitLimits] = useState(props.item.bitsLimit);
+  var [imagesHaveChanged, setImagesHaveChanged] = useState(false);
+
+  useEffect(() => {
+    var config = {
+      method: "get",
+      url: process.env.REACT_APP_API_BASE_URL + "/getmerchimages",
+      params: { id: props.item._id },
+    };
+
+    axios(config).then((response) => {
+      if (response.status === 200) {
+        setImages(response.data.images);
+        setThumbnail(response.data.thumbnail);
+      } else {
+        setImages([]);
+        setThumbnail([]);
+      }
+    });
+  }, [props._id]);
 
   function onSubmit(e) {
     e.preventDefault();
@@ -204,7 +224,14 @@ function EditMerch(props) {
     if (bits !== props.item.bits) {
       newMerch.bits = bits;
     }
+    if (bitsLimit !== props.item.bitsLimit) {
+      newMerch.bitsLimit = bitsLimit;
+    }
 
+    if (imagesHaveChanged) {
+      newMerch.images = images;
+      newMerch.thumbnail = thumbnail;
+    }
     var config = {
       method: "post",
       url: process.env.REACT_APP_API_BASE_URL + "/editmerch",
@@ -213,7 +240,6 @@ function EditMerch(props) {
 
     axios(config).then(function (response) {
       if (response.status === 200) {
-        console.log(response.data.result);
         props.onUpdate(response.data.result);
       }
       setShowModal(false);
@@ -262,8 +288,16 @@ function EditMerch(props) {
                 <h3 className="mb-4 text-xl font-medium text-gray-900 dark:text-white">
                   Edit Product
                 </h3>
-                <div className=" relative flex flex-row mb-2 mx-auto items-center ">
-                  {images.map((img) => (
+                <div
+                // className=" relative flex flex-row mb-2 mx-auto items-center "
+                >
+                  <ImageGrid
+                    images={images}
+                    setImages={setImages}
+                    setImagesHaveChanged={setImagesHaveChanged}
+                    setThumbnail={setThumbnail}
+                  />
+                  {/* {images.map((img) => (
                     <div>
                       <img
                         src={img}
@@ -272,9 +306,10 @@ function EditMerch(props) {
                       />
                       {/* <span className="absolute top-0 bg-gray-200 px-1 py-1 text-black">
                         X
-                      </span> */}
+                      </span> 
                     </div>
                   ))}
+                */}
                 </div>
                 <form className="space-y-2" action="#">
                   <div>
@@ -435,6 +470,7 @@ function AddMerch(props) {
   var [images, setImages] = useState([]);
   var [thumbnail, setThumbnail] = useState("");
   var [bits, setBits] = useState(false);
+  var [bitsLimit, setBitLimits] = useState(0);
   var [link, setLink] = useState(null);
   var [cat, setCat] = useState(null);
   var [cats, setCats] = useState([]);
@@ -470,6 +506,7 @@ function AddMerch(props) {
         bits: bits,
         thumbnail: thumbnail,
         link: link,
+        bitsLimit: bitsLimit,
         category: cat,
       };
 
@@ -528,21 +565,17 @@ function AddMerch(props) {
                 </svg>
                 <span className="sr-only">Close modal</span>
               </button>
-              <div className="px-6 py-6 lg:px-8">
+              <div className="px-6 py-2 lg:px-8">
                 <h3 className="mb-4 text-xl font-medium text-gray-900 dark:text-white">
                   Add new item
                 </h3>
 
-                <div className="flex flex-row gap-2 mb-2">
-                  {images.length > 0 &&
-                    images.map((img) => (
-                      <img
-                        src={img}
-                        alt="product image"
-                        className="rounded-lg w-10 h-10 object-fit"
-                      />
-                    ))}
-                </div>
+                <ImageGrid
+                  images={images}
+                  setImages={setImages}
+                  setThumbnail={setThumbnail}
+                  thumbnail={thumbnail}
+                />
                 <form className="space-y-2" action="#">
                   <div>
                     <input
@@ -640,6 +673,22 @@ function AddMerch(props) {
                       }}
                     />
                   </div>
+                  <div>
+                    <input
+                      type="Number"
+                      name="price"
+                      id="email"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                      placeholder="Bits Limit"
+                      required
+                      min={0}
+                      max={price * 2}
+                      onChange={(e) => {
+                        setBitLimits(e.target.value);
+                      }}
+                    />
+                  </div>
+
                   <div className="flex justify-between">
                     <div className="flex items-start">
                       <div className="flex items-center h-4">
@@ -663,56 +712,6 @@ function AddMerch(props) {
                     </div>
                   </div>
                   <div className="flex justify-space">
-                    <label className="px-5 w-1/2 text-sm cursor-pointer py-2 bg-blue-600 text-white rounded-lg">
-                      <input
-                        accept="image/*"
-                        multiple
-                        type="file"
-                        className="hidden"
-                        onChange={(e) => {
-                          var imgs = Array.from(e.target.files);
-                          imgs = imgs.slice(0, 5);
-                          imgs.map(
-                            (file) =>
-                              new Compressor(file, {
-                                quality: 0.8,
-                                maxHeight: 720,
-                                maxWidth: 1280,
-                                mimeType: ["image/webp"], // 0.6 can also be used, but its not recommended to go below.
-                                success: (compressedResult) => {
-                                  var reader = new FileReader();
-                                  reader.readAsDataURL(compressedResult);
-                                  reader.onloadend = function () {
-                                    var base64String = reader.result;
-                                    setImages((oldArray) => [
-                                      ...oldArray,
-                                      base64String,
-                                    ]);
-                                  };
-                                },
-                              })
-                          );
-
-                          new Compressor(imgs[0], {
-                            quality: 0.8,
-                            maxHeight: 200,
-                            maxWidth: 200,
-                            mimeType: ["image/webp"], // 0.6 can also be used, but its not recommended to go below.
-                            success: (compressedResult) => {
-                              var reader = new FileReader();
-                              reader.readAsDataURL(compressedResult);
-                              reader.onloadend = function () {
-                                var base64String = reader.result;
-                                setThumbnail(base64String);
-                              };
-                            },
-                          });
-                        }}
-                        required
-                      />
-                      Upload Images
-                    </label>
-
                     <button
                       type="button"
                       onClick={(e) => {

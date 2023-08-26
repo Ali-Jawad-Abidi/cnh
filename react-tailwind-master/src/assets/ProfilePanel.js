@@ -10,6 +10,7 @@ import icon from "./img/defaulticon.webp";
 
 export function ProfileDisplay(props) {
   var user = props.user;
+  var [TwoFA, set2FA] = useState(user.twoFactorEnabled);
   var [image, setImage] = useState(
     user.image ? (user.image.length > 0 ? user.image : icon) : icon
   );
@@ -141,6 +142,32 @@ export function ProfileDisplay(props) {
             <p className="text-sm font-normal text-gray-600">Verified</p>
           </div>
         </div>
+        {/* <div class="flex items-center mb-4 mt-2">
+          <input
+            id="default-checkbox"
+            type="checkbox"
+            value=""
+            class="w-4 cursor-pointer h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+            onChange={() => {
+              var config = {
+                method: "get",
+                url: process.env.REACT_APP_API_BASE_URL + "/twofa",
+                params: {
+                  id: JSON.parse(localStorage.getItem("userid")),
+                  value: !TwoFA,
+                },
+              };
+              axios(config);
+              set2FA(!TwoFA);
+            }}
+          />
+          <label
+            for="default-checkbox"
+            class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+          >
+            Disable 2FA
+          </label>
+        </div> */}
       </div>
     </div>
   );

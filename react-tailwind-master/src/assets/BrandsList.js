@@ -4,6 +4,7 @@ import ReactFileReader from "react-file-reader";
 import Loading from "./Loading";
 import Compressor from "compressorjs";
 import React from "react";
+import SingleImageUpload from "./SingleImageUpload";
 
 export default function BrandsList(props) {
   var [search, setSearch] = useState("");
@@ -56,7 +57,17 @@ export default function BrandsList(props) {
   }, [props.unapproved]);
 
   function onAdd(item) {
-    setBrands((oldArray) => [...oldArray, item]);
+    props.unapproved
+      ? setUnapprovedBrands((oldArray) => [...oldArray, item])
+      : setBrands((oldArray) => [...oldArray, item]);
+  }
+
+  function onRemove(itemToRemove) {
+    props.unapproved
+      ? setUnapprovedBrands(
+          unapprovedBrands.filter((item) => item._id !== itemToRemove._id)
+        )
+      : setBrands(brands.filter((item) => item._id !== itemToRemove._id));
   }
 
   function onUpdate(data) {
@@ -195,31 +206,37 @@ export default function BrandsList(props) {
               <td class="px-6 py-4">
                 <button
                   onClick={() => {
-                    var config = {
-                      method: "get",
-                      url: process.env.REACT_APP_API_BASE_URL + "/removebrand",
-                      params: {
-                        userid: JSON.parse(localStorage.getItem("userid")),
-                        id: brand._id,
-                      },
-                    };
+                    const conf = confirm(
+                      "Are you sure you want to delete this brand"
+                    );
+                    if (conf) {
+                      var config = {
+                        method: "get",
+                        url:
+                          process.env.REACT_APP_API_BASE_URL + "/removebrand",
+                        params: {
+                          userid: JSON.parse(localStorage.getItem("userid")),
+                          id: brand._id,
+                        },
+                      };
 
-                    axios(config).then(function (response) {
-                      if (response.status === 200) {
-                        console.log(response.data);
-                        props.unapproved
-                          ? setUnapprovedBrands(
-                              unapprovedBrands.filter((u) => {
-                                return brand._id !== u._id;
-                              })
-                            )
-                          : setBrands(
-                              brands.filter((u) => {
-                                return brand._id !== u._id;
-                              })
-                            );
-                      }
-                    });
+                      axios(config).then(function (response) {
+                        console.log(response);
+                        if (response.status === 200) {
+                          props.unapproved
+                            ? setUnapprovedBrands(
+                                unapprovedBrands.filter((u) => {
+                                  return brand._id !== u._id;
+                                })
+                              )
+                            : setBrands(
+                                brands.filter((u) => {
+                                  return brand._id !== u._id;
+                                })
+                              );
+                        }
+                      });
+                    }
                   }}
                   class="font-medium bg-red-600 rounded-xl px-3 py-2 text-white hover:bg-red-700"
                 >
@@ -247,18 +264,11 @@ function EditBrand(props) {
   var [showModal, setShowModal] = useState(false);
   var [name, setName] = useState(props.brand.name);
   var [image, setImage] = useState(props.brand.image);
-  var [imageChanged, setImageChanged] = useState(false);
 
   function onSubmit(e) {
     e.preventDefault();
 
-    var brand = {};
-    if (name !== props.brand.name) {
-      brand.name = name;
-    }
-    if (imageChanged) {
-      brand.image = image;
-    }
+    var brand = { name: name, image: image };
 
     var config = {
       method: "post",
@@ -315,29 +325,8 @@ function EditBrand(props) {
                 <h3 className="mb-4 text-xl font-medium text-gray-900 dark:text-white">
                   Edit Brand
                 </h3>
-                <img
-                  src={image}
-                  alt="brand image"
-                  className="h-20 w-25 object-fit rounded-lg"
-                />
                 <form className="space-y-2" action="#">
-                  <ReactFileReader
-                    fileTypes={[".png", ".jpg", "jpeg"]}
-                    base64={true}
-                    multipleFiles={false}
-                    handleFiles={(files) => {
-                      setImage(files.base64);
-                      setImageChanged(true);
-                    }}
-                    required
-                  >
-                    <button
-                      type="button"
-                      className="w-auto mt-1 whitespace-nowrap mr-1 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                    >
-                      Change Image
-                    </button>
-                  </ReactFileReader>
+                  <SingleImageUpload image={image} onImageChange={setImage} />
                   <div>
                     <label
                       for="email"
@@ -512,46 +501,10 @@ export function AddBrand(props) {
                     </select>
                   </div>
                   <div className="flex flex-col gap-2">
-                    {brandImage && (
-                      <>
-                        <label
-                          for="countries"
-                          class="block mb-2 text-left text-sm font-medium text-gray-900 dark:text-white"
-                        >
-                          Brand Image
-                        </label>
-                        <img
-                          src={brandImage}
-                          alt="brand image"
-                          className="h-12 w-12 rounded-lg"
-                        />
-                      </>
-                    )}
-                    <label className="px-5 w-1/2 text-sm cursor-pointer py-2 bg-blue-600 text-white rounded-lg">
-                      <input
-                        accept="image/*"
-                        multiple
-                        type="file"
-                        className="hidden"
-                        onChange={(e) => {
-                          new Compressor(e.target.files[0], {
-                            quality: 0.8,
-                            maxHeight: 720,
-                            maxWidth: 1280,
-                            mimeType: ["image/webp"], // 0.6 can also be used, but its not recommended to go below.
-                            success: (compressedResult) => {
-                              var reader = new FileReader();
-                              reader.readAsDataURL(compressedResult);
-                              reader.onloadend = function () {
-                                var base64String = reader.result;
-                                setBrandImage(base64String);
-                              };
-                            },
-                          });
-                        }}
-                      />
-                      Upload Image
-                    </label>
+                    <SingleImageUpload
+                      image={brandImage}
+                      onImageChange={setBrandImage}
+                    />
                   </div>
 
                   <div>

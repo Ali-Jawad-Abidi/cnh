@@ -108,9 +108,10 @@ export default function MerchCatList(props) {
                       method: "get",
                       url:
                         process.env.REACT_APP_API_BASE_URL + "/removemerchcat",
-                      data: { id: product._id },
+                      params: { id: product._id },
                     };
                     axios(config).then(function (response) {
+                      console.log(response);
                       if (response.status === 200) {
                         setMerchCats(
                           merchCats.filter((u) => {
@@ -261,7 +262,7 @@ function AddMerch(props) {
     };
 
     axios(config).then(function (response) {
-      newMerch._id = response.data.id;
+      newMerch._id = response.data;
       props.onAdd(newMerch);
     });
   }

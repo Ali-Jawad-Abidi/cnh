@@ -2,6 +2,7 @@ import React from "react";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import Loading from "./Loading";
+import { Link } from "react-router-dom";
 
 export default function UserList(props) {
   var [search, setSearch] = useState("");
@@ -88,7 +89,7 @@ export default function UserList(props) {
         <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
             <th scope="col" class="px-6 py-3">
-              Name
+              User
             </th>
             <th scope="col" class="px-6 py-3">
               Position
@@ -111,15 +112,20 @@ export default function UserList(props) {
                 scope="row"
                 class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap dark:text-white"
               >
-                <img
-                  class="w-10 h-10 rounded-full"
-                  src={user.thumbnail}
-                  alt="Jese image"
-                />
-                <div class="pl-3">
-                  <div class="text-base font-semibold">{user.username}</div>
-                  <div class="font-normal text-gray-500">{user.email}</div>
-                </div>
+                <Link
+                  to={`/profilepage/${user._id}`}
+                  className="flex flex-row gap-2"
+                >
+                  <img
+                    class="w-10 h-10 rounded-full"
+                    src={user.thumbnail}
+                    alt="Jese image"
+                  />
+                  <div>
+                    <div class="text-base font-semibold">{user.username}</div>
+                    <div class="font-normal text-gray-500">{user.email}</div>
+                  </div>
+                </Link>
               </th>
               <td class="px-6 py-4">
                 {user.isPremium ? "Premium User" : "Standard User"}

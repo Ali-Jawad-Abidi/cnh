@@ -9,41 +9,45 @@ import Loading from "./Loading";
 export function BlogItem(props) {
   return (
     <Link to={`/blogs/${props.item._id}`}>
-      <div class="max-w-sm min-h-[60vh] bg-white border hover:scale-105 items-center border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
+      <div class="max-w-sm min-h-[40vh] bg-white border hover:scale-105 items-center border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
         <img
-          class="object-cover w-full h-[25vh] cursor-pointer  "
+          class="object-cover w-full h-[25vh] cursor-pointer rounded-lg "
           src={props.item.thumbnail}
           alt=""
         />
 
-        <div class="p-2 h-[30vh]">
-          <a href="#">
-            <h5 class="mb-2 line-clamp-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-              {props.item.title}
-            </h5>
-          </a>
-          <p class="mb-2 line-clamp-3 font-normal text-gray-700 dark:text-gray-400">
-            {props.item.info}
-          </p>
-          <a
-            href="#"
-            class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-          >
-            Read more
-            <svg
-              aria-hidden="true"
-              class="w-4 h-4 ml-2 -mr-1"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
+        <div class="p-2 h-[30vh] flex flex-col justify-between">
+          <div>
+            <a href="#">
+              <h5 class="mb-2 line-clamp-3 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                {props.item.title}
+              </h5>
+            </a>
+            <p class="mb-2 line-clamp-3 font-normal text-gray-700 dark:text-gray-400">
+              {props.item.info}
+            </p>
+          </div>
+          <div>
+            <a
+              href="#"
+              class="inline-flex bottom-0 px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
-              <path
-                fillRule="evenodd"
-                d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              ></path>
-            </svg>
-          </a>
+              Read more
+              <svg
+                aria-hidden="true"
+                class="w-4 h-4 ml-2 -mr-1"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                ></path>
+              </svg>
+            </a>
+          </div>
         </div>
       </div>
     </Link>
@@ -53,7 +57,7 @@ export function BlogItem(props) {
 export function BlogsGrid(props) {
   var blogs = props.blogs;
   return (
-    <div className="mx-3 p-2 min-h-screen border-2 mb-4">
+    <div className="mx-3 p-2 min-h-screen border-2 mb-4 rounded-lg">
       <Grid container columnSpacing={2} rowSpacing={2}>
         {blogs.map((blog) => (
           <Grid item xs={6} sm={6} md={3}>

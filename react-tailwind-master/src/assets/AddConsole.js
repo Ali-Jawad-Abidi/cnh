@@ -117,6 +117,7 @@ export default function AddConsole(props) {
       regionalcode: regionalCode,
       addedby: JSON.parse(localStorage.getItem("userid")),
       userwhoadded: JSON.parse(localStorage.getItem("username")),
+      token: JSON.parse(localStorage.getItem("token")),
       subcat: cat,
     };
     var config = {

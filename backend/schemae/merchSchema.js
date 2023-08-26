@@ -33,6 +33,10 @@ const MerchSchema = new mongoose.Schema({
     default: false,
     required: true,
   },
+  bitsLimit: {
+    type: Number,
+    default: 0,
+  },
   thumbnail: {
     type: String,
     required: true,

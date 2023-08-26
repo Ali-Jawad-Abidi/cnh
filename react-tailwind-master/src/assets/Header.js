@@ -99,6 +99,24 @@ function DropDown(props) {
                 </a>
               )}
             </Menu.Item>
+
+            <Menu.Item>
+              {({ active }) => (
+                <a className="cursor-pointer">
+                  <li
+                    onClick={props.showModal}
+                    className={classNames(
+                      active
+                        ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        : "text-gray-700 dark:text-gray-400",
+                      "block px-4 py-2 text-sm"
+                    )}
+                  >
+                    Bit Scheme
+                  </li>
+                </a>
+              )}
+            </Menu.Item>
           </div>
         </Menu.Items>
       </Transition>
@@ -113,13 +131,15 @@ const Header = (props) => {
   let hamburger = useRef(null);
   var [showCart, setShowCart] = useState(false);
   var [showProfilePanel, setShowProfilePanel] = useState(false);
+  var [showModal, setShowModal] = useState(false);
   var len =
     "cart" in localStorage
       ? JSON.parse(localStorage.getItem("cart")).length
       : 0;
   var [total, setTotal] = useState(len);
   var profImage =
-    "profileImage" in localStorage
+    "profileImage" in localStorage &&
+    localStorage.getItem("profileImage") !== undefined
       ? JSON.parse(localStorage.getItem("profileImage"))
       : icon;
 
@@ -196,8 +216,16 @@ const Header = (props) => {
                   Store
                 </li>
               </Link>
+
+              {localStorage.getItem("userid") && (
+                <Link to="/bitslog" style={{ textDecoration: "none" }}>
+                  <li className="mb-5 lg:mb-0 lg:mx-4 lg:h-inherit dark:text-white lg:flex lg:items-center cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
+                    Bits Log
+                  </li>
+                </Link>
+              )}
               <li className="hidden lg:block">
-                <DropDown />
+                <DropDown showModal={() => setShowModal(true)} />
               </li>
 
               <a
@@ -218,6 +246,25 @@ const Header = (props) => {
                   Twitter
                 </li>
               </a>
+              <a>
+                <li
+                  onClick={() => {
+                    setShowModal(true);
+                  }}
+                  className=" lg:hidden block mb-5 lg:mb-0 lg:mx-4 lg:h-inherit lg:flex lg:items-center dark:text-white cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue"
+                >
+                  Bit Scheme
+                </li>
+              </a>
+              {/* <li
+                className=" lg:hidden block mb-5 lg:mb-0 lg:mx-4 lg:h-inherit lg:flex lg:items-center dark:text-white cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue"
+                onClick={() => {
+                  setShowModal(true);
+                }}
+              >
+                Bits Scheme
+              </li> */}
+
               <a href="/about">
                 <li className=" lg:hidden block mb-5 lg:mb-0 lg:mx-4 lg:h-inherit lg:flex lg:items-center dark:text-white cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
                   About
@@ -233,7 +280,7 @@ const Header = (props) => {
 
         <div className="right mr-4">
           <div className="user-bar flex items-center">
-            <div class="relative">
+            {/* <div class="relative">
               <form>
                 <input
                   type="search"
@@ -253,7 +300,7 @@ const Header = (props) => {
                   <button type="submit">Go</button>
                 </Link>
               </form>
-            </div>
+            </div> */}
 
             {!props.hideCart && (
               <div className="cart-container">
@@ -307,6 +354,79 @@ const Header = (props) => {
           </div>
         </div>
       </div>
+      {showModal && (
+        <div
+          id="authentication-modal"
+          tabIndex="-1"
+          className="fixed z-40 inset-0 flex items-center justify-center w-full p-4 backdrop-blur overflow-x-hidden md:inset-0 h-[calc(80%-1rem)] md:h-full max-h-[100%]"
+        >
+          <div className="relative w-full h-full max-w-lg h-auto max-h-[90%]">
+            <div className="relative bg-white rounded-lg shadow dark:bg-gray-700">
+              <div className="px-6 py-6 lg:px-8">
+                <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
+                  <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    Bits Scheme
+                  </h3>
+                  <button
+                    type="button"
+                    class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                    data-modal-hide="defaultModal"
+                    onClick={() => {
+                      setShowModal(false);
+                    }}
+                  >
+                    <svg
+                      aria-hidden="true"
+                      class="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clip-rule="evenodd"
+                      ></path>
+                    </svg>
+                    <span class="sr-only">Close modal</span>
+                  </button>
+                </div>
+                <div class="p-6 space-y-6">
+                  <p class="text-sm leading-relaxed text-left text-gray-500 dark:text-gray-400">
+                    10 "bits" is equal to £1 on our store, but bits can not be
+                    traded with other users or for real-world currency.
+                    <br />
+                    Bits can be earned through actions such as:
+                    <br /> -Becoming a patreon member (one-off) - 50 bits
+                    <br />
+                    -Remaining a patreon member for 6 months - 100 bits
+                    <br />
+                    -Logging into the website for 7 consecutive days - 5 bits
+                    <br /> -Correcting a mistake - 1 bit
+                    <br /> -Referring a friend to patreon - 50 bits to you and
+                    your friend
+                    <br /> -Adding a new console to the base - 5 bits
+                    <br />
+                    -Wearing our merch and promoting us at a gaming event - 50
+                    bits
+                    <br /> -Earn the most points in a month win an additional -
+                    50 bits
+                    <br /> -Share anything brand-new, never-before-seen
+                    unreleased game-related - 500 bits
+                    <br /> -Share any brand new information from another source
+                    - 25 bits
+                    <br /> -Create a new article or forum post that gets picked
+                    up by another website or game source - 25 bits
+                    <br />
+                    Standard users can earn up to 25 points p/day Premium users
+                    can earn up to 75 points p/day
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

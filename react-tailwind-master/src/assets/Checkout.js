@@ -130,6 +130,9 @@ export default function Checkout(props) {
   const [ErrorMessage, setErrorMessage] = useState("");
   const [orderID, setOrderID] = useState(0);
   var [total, setTotal] = useState(0);
+  const [deliveryCost, setDeliveryCost] = useState(0);
+  const [subtotal, setSubTotal] = useState(0);
+  const [totalBitsSpent, setTotalBitsSpent] = useState(0);
   var [cartItems, setCartItems] = useState(
     "cart" in localStorage ? JSON.parse(localStorage.getItem("cart")) : []
   );
@@ -150,14 +153,18 @@ export default function Checkout(props) {
 
   useEffect(() => {
     var AmmountToPay = 0;
+    var BitsSpent = 0;
     window.addEventListener("storage", () => {
       cartItems.map((item) => {
         AmmountToPay =
           AmmountToPay +
           (item.price.toFixed(2) - (item.price * item.discount) / 100) *
             item.quantity;
+
+        BitsSpent = BitsSpent + item.bitsSpent;
       });
       setTotal(AmmountToPay);
+      setTotalBitsSpent(BitsSpent);
       setCartItems(
         "cart" in localStorage ? JSON.parse(localStorage.getItem("cart")) : []
       );
@@ -171,9 +178,18 @@ export default function Checkout(props) {
         AmmountToPay +
         (item.price.toFixed(2) - (item.price * item.discount) / 100) *
           item.quantity;
+
+      BitsSpent = BitsSpent + item.bitsSpent;
     });
+
+    setSubTotal(AmmountToPay);
+    setTotalBitsSpent(BitsSpent);
+
+    // if (AmmountToPay > 0 && payWithBits) {
+    //   AmmountToPay = AmmountToPay - Math.floor(bitsUsed / 2);
+    // }
     setTotal(AmmountToPay);
-  }, []);
+  });
 
   //capture likely error
   const onError = (data, actions) => {
@@ -187,7 +203,7 @@ export default function Checkout(props) {
         success={success}
         onError={ErrorMessage}
         cart={cartItems}
-        total={total}
+        total={total + deliveryCost}
         orderID={orderID}
       />
     );
@@ -332,7 +348,8 @@ export default function Checkout(props) {
           <p className="text-gray-400">
             Complete your order by providing your payment details.
           </p>
-          <div className="mt-8 space-y-3 rounded-lg border bg-white px-2 py-4 sm:px-6 dark:bg-gray-900">
+
+          <div className="mt-4 space-y-3 rounded-lg border bg-white px-2 py-4 sm:px-6 dark:bg-gray-900">
             <div className="flex w-full flex-row justify-between">
               <span className="font-semibold dark:text-white">SubTotal:</span>
               <span className="float-right text-gray-400 dark:text-white">
@@ -344,13 +361,14 @@ export default function Checkout(props) {
                 Delivery Costs:
               </span>
               <span className="float-right text-gray-400 dark:text-white">
-                {"100USD" + " "}
+                {deliveryCost}
               </span>
             </div>
+
             <div className="flex w-full flex-row justify-between">
               <span className="font-semibold dark:text-white">Total:</span>
               <span className="float-right text-gray-400 dark:text-white">
-                {total + 100 + "USD "}
+                {subtotal + deliveryCost + "USD "}
               </span>
             </div>
           </div>
@@ -375,7 +393,7 @@ export default function Checkout(props) {
                     .create({
                       purchase_units: [
                         {
-                          amount: { currency_code: "USD", value: total },
+                          amount: { currency_code: "USD", value: subtotal },
                         },
                       ],
                     })
@@ -387,6 +405,7 @@ export default function Checkout(props) {
                 onApprove={(data, actions) => {
                   return actions.order.capture().then(function (details) {
                     console.log(details);
+
                     var config = {
                       method: "post",
                       url: process.env.REACT_APP_API_BASE_URL + "/neworder",
@@ -404,7 +423,8 @@ export default function Checkout(props) {
                           email: details.payer.email_address,
                         },
                         shipping: details.purchase_units[0].shipping.address,
-                        total: total,
+                        total: subtotal,
+                        bitsSpent: totalBitsSpent,
                       },
                     };
 

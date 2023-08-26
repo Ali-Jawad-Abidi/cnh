@@ -29,14 +29,14 @@ export default function BlogDisplay(prop) {
       <Header />
       <div className="lg:mx-28 mx-4 mb-4">
         <div className="flex flex-col gap-2 shadow-lg my-4 dark:bg-gray-800 rounded-lg p-4 pb-8">
-          <img
-            src={blog.image}
-            alt="blog image"
-            className="w-full h-96 lg:px-12 px-4 object-cover"
-          />
           <div className="shadow-xl p-4 rounded-lg dark:bg-gray-800">
-            <p className="text-2xl font-bold text-center mb-4">{blog.title}</p>
-            <p className="text-left whitespace-pre-wrap text-lg dark:text-white lg:px-8 px-2">
+            <p className="text-2xl font-bold text-left mb-4">{blog.title}</p>
+            <img
+              src={blog.image}
+              alt="blog image"
+              className="w-full h-96 lg:px-1 px-1 object-cover"
+            />
+            <p className="text-left whitespace-pre-wrap text-lg dark:text-white pt-4">
               {blog.text}
             </p>
           </div>

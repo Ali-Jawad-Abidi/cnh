@@ -131,7 +131,7 @@ export function EcomCard(props) {
               <br />
               {props.item.bits && (
                 <span className="grow text-sm pt-2 text-gray-700 dark:text-white">
-                  {(props.item.price * 10).toFixed(2)} Bits
+                  {(props.item.price * 2).toFixed(2)} Bits
                 </span>
               )}
               {!props.item.bits && (

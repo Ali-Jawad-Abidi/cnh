@@ -20,7 +20,7 @@ export default function Logout() {
             : JSON.parse(localStorage.getItem("redirectTo"));
 
         localStorage.clear();
-        window.location = redirectTo || "/";
+        window.location = redirectTo;
       }
     });
   });

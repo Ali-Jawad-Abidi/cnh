@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Loading from "./Loading";
 import ReactFileReader from "react-file-reader";
 import Compressor from "compressorjs";
+import SingleImageUpload from "./SingleImageUpload";
 
 export default function SubcatsList(props) {
   var [search, setSearch] = useState("");
@@ -126,25 +127,30 @@ export default function SubcatsList(props) {
               <td class="px-6 py-4">
                 <button
                   onClick={() => {
-                    var config = {
-                      method: "get",
-                      url: process.env.REACT_APP_API_BASE_URL + "/removesubcat",
-                      params: {
-                        userid: JSON.parse(localStorage.getItem("userid")),
-                        id: subcat._id,
-                      },
-                    };
+                    if (
+                      confirm("Are you sure you want to delete this category?")
+                    ) {
+                      var config = {
+                        method: "get",
+                        url:
+                          process.env.REACT_APP_API_BASE_URL + "/removesubcat",
+                        params: {
+                          userid: JSON.parse(localStorage.getItem("userid")),
+                          id: subcat._id,
+                        },
+                      };
 
-                    axios(config).then(function (response) {
-                      if (response.status === 200) {
-                        console.log(response.data);
-                        setSubcats(
-                          subcats.filter((u) => {
-                            return subcat._id !== u._id;
-                          })
-                        );
-                      }
-                    });
+                      axios(config).then(function (response) {
+                        if (response.status === 200) {
+                          console.log(response.data);
+                          setSubcats(
+                            subcats.filter((u) => {
+                              return subcat._id !== u._id;
+                            })
+                          );
+                        }
+                      });
+                    }
                   }}
                   class="font-medium bg-red-600 rounded-xl px-3 py-2 text-white hover:bg-red-700"
                 >
@@ -280,46 +286,10 @@ export function AddSubcat(props) {
               </div>
               <form className="space-y-2 p-4">
                 <div className="flex flex-col gap-2">
-                  {subcatImage && (
-                    <>
-                      <label
-                        for="countries"
-                        class="block mb-2 text-left text-sm font-medium text-gray-900 dark:text-white"
-                      >
-                        Category Image
-                      </label>
-                      <img
-                        src={subcatImage}
-                        alt="brand image"
-                        className="h-12 w-12 rounded-lg"
-                      />
-                    </>
-                  )}
-                  <label className="px-5 w-1/2 text-sm cursor-pointer py-2 bg-blue-600 text-white rounded-lg">
-                    <input
-                      accept="image/*"
-                      multiple
-                      type="file"
-                      className="hidden"
-                      onChange={(e) => {
-                        new Compressor(e.target.files[0], {
-                          quality: 0.8,
-                          maxHeight: 720,
-                          maxWidth: 1280,
-                          mimeType: ["image/webp"], // 0.6 can also be used, but its not recommended to go below.
-                          success: (compressedResult) => {
-                            var reader = new FileReader();
-                            reader.readAsDataURL(compressedResult);
-                            reader.onloadend = function () {
-                              var base64String = reader.result;
-                              setSubCatImage(base64String);
-                            };
-                          },
-                        });
-                      }}
-                    />
-                    Upload Image
-                  </label>
+                  <SingleImageUpload
+                    image={subcatImage}
+                    onImageChange={setSubCatImage}
+                  />
                 </div>
                 <div>
                   <label
@@ -425,13 +395,7 @@ function EditSubcat(props) {
   function onSubmit(e) {
     e.preventDefault();
 
-    var subcategory = {};
-    if (imageChanged) {
-      subcategory.image = image;
-    }
-    if (name !== props.subcat.name) {
-      subcategory.name = name;
-    }
+    var subcategory = { image: image, name: name };
 
     var config = {
       method: "post",
@@ -488,29 +452,8 @@ function EditSubcat(props) {
                 <h3 className="mb-4 text-xl font-medium text-gray-900 dark:text-white">
                   Edit Category
                 </h3>
-                <img
-                  src={image}
-                  alt="brand image"
-                  className="h-20 w-25 object-fit rounded-lg"
-                />
                 <form className="space-y-2" action="#">
-                  <ReactFileReader
-                    fileTypes={[".png", ".jpg", "jpeg"]}
-                    base64={true}
-                    multipleFiles={false}
-                    handleFiles={(files) => {
-                      setImage(files.base64);
-                      setImageChanged(true);
-                    }}
-                    required
-                  >
-                    <button
-                      type="button"
-                      className="w-auto mt-1 whitespace-nowrap mr-1 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                    >
-                      Change Image
-                    </button>
-                  </ReactFileReader>
+                  <SingleImageUpload image={image} onImageChange={setImage} />
                   <div>
                     <label
                       for="email"

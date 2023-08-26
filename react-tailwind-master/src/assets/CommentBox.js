@@ -25,6 +25,7 @@ export default function CommentBox(props) {
   }, []);
 
   function PostComment(e) {
+    e.preventDefault();
     var d = new Date();
     var months = [
       "Jan",
@@ -41,8 +42,8 @@ export default function CommentBox(props) {
       "Dec",
     ];
     var dateToAdd =
-      d.getDay() + " " + months[d.getMonth()] + " " + d.getFullYear();
-    e.preventDefault();
+      d.getDate() + " " + months[d.getMonth()] + " " + d.getFullYear();
+
     var CommentObject = Object();
     CommentObject.text = text;
     CommentObject.post = props.post;
