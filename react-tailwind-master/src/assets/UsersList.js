@@ -3,6 +3,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import Loading from "./Loading";
 import { Link } from "react-router-dom";
+import icon from "./img/defaulticon.webp";
 
 export default function UserList(props) {
   var [search, setSearch] = useState("");
@@ -118,7 +119,7 @@ export default function UserList(props) {
                 >
                   <img
                     class="w-10 h-10 rounded-full"
-                    src={user.thumbnail}
+                    src={user.thumbnail ? user.thumbnail : icon}
                     alt="Jese image"
                   />
                   <div>
