@@ -164,15 +164,31 @@ function ProductDetails(props) {
   var images = props.item.images;
   const addCart = props.addCart;
   var totalQuantity = props.item.quantity;
+  const [conversionRate, setConversionRate] = useState(1);
   var [bitsSpent, setBitsSpent] = useState(0);
   var link = props.item.link;
   var [showComboBox, setShowComboBox] = useState(false);
+  const [originalPrice, setOriginalPrice] = useState(props.item.price);
   const [userBits, setUserBits] = useState(0);
 
   var [quantity, setQuantity] = useState(1);
-  var price = props.item.price - bitsSpent / 2;
+  var price = originalPrice - bitsSpent / conversionRate;
 
-  var bitsLimitToShow = bitsLimit * quantity;
+  var bitsLimitToShow = bitsLimit;
+
+  useEffect(() => {
+    fetchConversionRate();
+  });
+
+  function fetchConversionRate() {
+    axios
+      .get(process.env.REACT_APP_API_BASE_URL + "/conversionRate")
+      .then((response) => {
+        if (response.status === 200) {
+          setConversionRate(response.data);
+        }
+      });
+  }
   return (
     <>
       <h2 className="company uppercase text-blue-700 font-bold text-sm sm:text-md tracking-wider pb-3 sm:pb-5">
@@ -190,12 +206,15 @@ function ProductDetails(props) {
       </p>
 
       {link && link.length > 0 && (
-        <a
-          href={link}
-          className="text-blue text-sm text-left underline cursor-pointer dark:text-blue-600"
-        >
-          Link to Product
-        </a>
+        <div className="flex flex-row">
+          <a
+            href={link}
+            target="_blank"
+            className="text-left text-white bg-blue-600 hover:bg-blue-700 cursor-pointer px-2 py-1 rounded-lg mb-2"
+          >
+            Link to Product
+          </a>
+        </div>
       )}
 
       <div className="amount font-bold flex items-center justify-between lg:flex-col lg:items-start mb-6">
@@ -204,7 +223,7 @@ function ProductDetails(props) {
             // ref={productPriceRef}
             className="price text-3xl"
           >
-            ${price - price * (discount / 100)}
+            ${(price - price * (discount / 100)).toFixed(2)}
           </div>
 
           {discount > 0 && (
@@ -215,7 +234,7 @@ function ProductDetails(props) {
         </div>
         {discount > 0 && (
           <div className="original-price text-grayish-blue line-through lg:mt-2">
-            ${price}
+            ${originalPrice.toFixed(2)}
           </div>
         )}
       </div>

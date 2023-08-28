@@ -265,7 +265,7 @@ export default function Checkout(props) {
                       $
                       {item.price.toFixed(2) -
                         (item.price * item.discount) / 100}
-                      x{item.quantity}
+                      x {item.quantity}
                     </span>
                     <p className="text-lg font-bold dark:text-white">
                       $

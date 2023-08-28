@@ -5,7 +5,7 @@ import axios from "axios";
 
 export default function ForgotPassword() {
   var [email, setEmail] = useState(null);
-  var [username, setUsername] = useState(null);
+  // var [username, setUsername] = useState(null);
   var [disabled, setDisabled] = useState(false);
   var [response, setResponse] = useState(null);
 
@@ -18,12 +18,11 @@ export default function ForgotPassword() {
             Forgot Your Password?
           </p>
           <p className="text-sm text-center text-bold dark:text-white">
-            Please enter the username and email address that is linked to your
-            account. <br /> You will receive the link to reset password on that
-            email.{" "}
+            Please enter the email address that is linked to your account.{" "}
+            <br /> You will receive the link to reset password on that email.{" "}
           </p>
           <form>
-            <div>
+            {/* <div>
               <label
                 for="username"
                 class="block mb-2 mt-2 text-xs text-left font-medium text-gray-900 dark:text-white"
@@ -39,7 +38,7 @@ export default function ForgotPassword() {
                 onChange={(e) => setUsername(e.target.value)}
                 disabled={disabled}
               />
-            </div>
+            </div> */}
 
             <div>
               <label
@@ -74,7 +73,7 @@ export default function ForgotPassword() {
                       process.env.REACT_APP_API_BASE_URL +
                       "/resetPasswordRequest",
                     method: "get",
-                    params: { username: username, email: email },
+                    params: { email: email },
                   };
 
                   axios(config).then((response) => {

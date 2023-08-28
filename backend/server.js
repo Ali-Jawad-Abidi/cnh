@@ -35,13 +35,15 @@ const crypto = require("crypto");
 const speakeasy = require("speakeasy");
 const qrcode = require("qrcode");
 
-const bitsAward = {
+var conversionRate = 2;
+var bitsAward = {
   "Correcting a mistake": 1,
+  "Adding a new console to the website": 5,
+  "Brand new information from another source": 25,
+  "New article gets picked up by another website": 25,
   "Referring a friend to patreon": 50,
   "Wearing cnh merch": 50,
   "Shared something brand new": 500,
-  "Brand new information from another source": 25,
-  "New article gets picked up by another website": 25,
 };
 
 function verifyWebhook(hmacSignature, payload) {
@@ -160,6 +162,10 @@ app.get("/api/uploads", (req, res) => {
       res.status(200).json({ uploads: sliced, isEnd: isEnd });
     }
   });
+});
+
+app.get("/api/getBitsAward", (req, res) => {
+  res.status(200).send(bitsAward);
 });
 
 app.post("/api/addrequest", async (req, res) => {
@@ -649,35 +655,31 @@ app.post("/api/resetPassword", (req, res) => {
 });
 
 app.get("/api/resetPasswordRequest", (req, res) => {
-  if (req.query.email && req.query.username) {
-    userModel.find({ username: req.query.username }, (err, data) => {
+  if (req.query.email) {
+    userModel.find({ username: req.query.email }, (err, data) => {
       if (err || data.length < 1) {
         res.status(400).json({ msg: "Bad Request" });
       } else if (data.length > 0) {
-        if (data[0].email !== req.query.email) {
-          res.status(202).send("Wrong Email for the username!!!");
-        } else if (data[0].email === req.query.email) {
-          var mailOptions = {
-            from: "computernostalgiaheaven@gmail.com",
-            to: data[0].email,
-            subject: "Password Reset",
-            text:
-              "Click the below link to reset your password\nhttps://thecnh.co.uk/resetPassword/?_id=" +
-              data[0]._id,
-          };
+        var mailOptions = {
+          from: "computernostalgiaheaven@gmail.com",
+          to: data[0].email,
+          subject: "Password Reset",
+          text:
+            "Click the below link to reset your password\nhttps://thecnh.co.uk/resetPassword/?_id=" +
+            data[0]._id,
+        };
 
-          transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-              console.log(error);
-              res.status(400).json({ msg: "Error Sending Email." });
-            } else {
-              console.log("Email sent: " + info.response);
-              res.status(200).json({
-                msg: "Email Sent. Please use the link to reset Password.",
-              });
-            }
-          });
-        }
+        transporter.sendMail(mailOptions, function (error, info) {
+          if (error) {
+            console.log(error);
+            res.status(400).json({ msg: "Error Sending Email." });
+          } else {
+            console.log("Email sent: " + info.response);
+            res.status(200).json({
+              msg: "Email Sent. Please use the link to reset Password.",
+            });
+          }
+        });
       }
     });
   } else {
@@ -1185,35 +1187,85 @@ app.get("/api/showLatest", (req, res) => {
 });
 
 app.get("/api/allusers", (req, res) => {
-  if (req.query.id) {
-    tokenModel.find({ userid: req.query.id }, (err, result) => {
-      if (err) console.log(err);
-      else if (result.length > 0) {
-        userModel.find({ authenticationtype: "Standard" }, (err, u) => {
-          if (err) {
-            res.status(400).send("User Not Found");
-          } else {
-            var isEnd = u.length < req.query.start + 8 ? true : false;
-            var sliced = u.slice(req.query.start, req.query.start + 8);
-            sliced.map((item) => delete item["password"]);
-            var toSend = [];
-            sliced.map((currentUser) => {
-              toSend.push({
-                username: currentUser.username,
-                thumbnail: currentUser.thumbnail,
-                email: currentUser.email,
-                isPremium: currentUser.isPremium,
-                wallet: currentUser.wallet,
-              });
-            });
-
-            res.status(200).json({ users: sliced, isEnd: isEnd });
-          }
+  userModel.find(
+    {
+      $or: [
+        { authenticationtype: "Standard" },
+        { authenticationtype: "other" },
+      ],
+    },
+    (err, u) => {
+      if (err) {
+        res.status(400).send("User Not Found");
+      } else {
+        var isEnd = u.length < req.query.start + 8 ? true : false;
+        var sliced = u.slice(req.query.start, req.query.start + 8);
+        sliced.map((item) => delete item["password"]);
+        var toSend = [];
+        sliced.map((currentUser) => {
+          toSend.push({
+            username: currentUser.username,
+            thumbnail: currentUser.thumbnail,
+            email: currentUser.email,
+            isPremium: currentUser.isPremium,
+            wallet: currentUser.wallet,
+          });
         });
-      } else res.status(400).send("Error!");
-    });
+
+        res.status(200).json({ users: sliced, isEnd: isEnd });
+      }
+    }
+  );
+});
+
+// Add a new key-value pair
+app.get("/api/addAward", (req, res) => {
+  console.log(req.query);
+  const { key, value } = req.query;
+
+  if (key && value && !isNaN(parseInt(value)) && isFinite(value)) {
+    bitsAward[key] = parseInt(value);
+    res.status(200).send(bitsAward);
   } else {
-    res.status(400).send("User Id not found");
+    res
+      .status(400)
+      .send(
+        "Both 'key' and a valid numeric 'value' query parameters are required."
+      );
+  }
+});
+
+// Edit an existing key-value pair
+app.get("/api/editAward", (req, res) => {
+  const { key, value } = req.query;
+
+  if (key && value) {
+    if (bitsAward.hasOwnProperty(key)) {
+      bitsAward[key] = parseInt(value);
+      res.status(200).send(bitsAward);
+    } else {
+      res.status(404).send("Key not found.");
+    }
+  } else {
+    res
+      .status(400)
+      .send("Both 'key' and 'value' query parameters are required.");
+  }
+});
+
+// Remove an existing key-value pair
+app.get("/api/removeAward", (req, res) => {
+  const { key } = req.query;
+
+  if (key) {
+    if (bitsAward.hasOwnProperty(key)) {
+      delete bitsAward[key];
+      res.status(200).send(bitsAward);
+    } else {
+      res.status(404).send("Key not found.");
+    }
+  } else {
+    res.status(400).send("'key' query parameter is required.");
   }
 });
 
@@ -2005,6 +2057,17 @@ app.post("/api/disapproveconsole", (req, res) => {
   }
 });
 
+app.get("/api/conversionRate", (req, res) => {
+  console.log(conversionRate);
+  res.status(200).send(JSON.stringify(conversionRate));
+});
+app.post("/api/setConversionRate", (req, res) => {
+  if (req.body.conversionRate) {
+    conversionRate = req.body.conversionRate;
+    res.status(200).send(conversionRate);
+  } else res.status(400).send("Error");
+});
+
 // return console based on req parameters
 app.get("/api/getallconsoles", (req, res) => {
   if (req.query.start) {
@@ -2456,6 +2519,7 @@ app.post("/api/updateUser", (req, res) => {
 });
 
 app.get("/api/changeEmail", (req, res) => {
+  console.log(req.query);
   if (req.query.id && req.query.updatedEmail) {
     userModel.find({ _id: req.query.id }, (err, data) => {
       if (err || data.length < 1) {

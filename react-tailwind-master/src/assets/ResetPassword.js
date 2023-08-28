@@ -76,7 +76,7 @@ export default function ResetPassword() {
                   shouldPass = false;
                 } else {
                   var config = {
-                    url: process.env.REACT_APP_API_BASE_URL + "resetPassword",
+                    url: process.env.REACT_APP_API_BASE_URL + "/resetPassword",
                     method: "post",
                     data: { id: id, password: password1 },
                   };

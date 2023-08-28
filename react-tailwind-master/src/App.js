@@ -111,6 +111,7 @@ export default function App() {
           />
 
           <Route exact path="/profile/:id" element={<ProfilePanel />} />
+          <Route exact path="/profilepage/:id" element={<ProfilePanel />} />
           <Route exact path="/search/:search" element={<SearchResults />} />
           <Route exact path="/addconsole" element={<AddConsole />} />
           <Route exact path="/logout" element={<Logout />} />

@@ -131,7 +131,7 @@ export function EcomCard(props) {
               <br />
               {props.item.bits && (
                 <span className="grow text-sm pt-2 text-gray-700 dark:text-white">
-                  {(props.item.price * 2).toFixed(2)} Bits
+                  {(props.item.price * props.conversionRate).toFixed(2)} Bits
                 </span>
               )}
               {!props.item.bits && (
@@ -141,36 +141,43 @@ export function EcomCard(props) {
               )}
             </p>
           </div>
-          <div
-            onClick={() => {
-              var newItem = {
-                img: props.item.images[0],
-                title: props.item.title,
-                id: props.item._id,
-                price: props.item.price,
-                discount: props.item.discount,
-                quantity: 1,
-              };
-              addCart(newItem);
+          <Link
+            to={{
+              pathname: `/store/${props.item.title}`,
+              search: `?${props.item.title}=${props.item._id}`,
             }}
-            className="hover:border-white/40 focus:bg-green-700 cursor-pointer flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-5 py-2.5 text-center text-sm font-medium text-white focus:outline-none focus:ring-4 focus:ring-blue-300"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="mr-2 h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
+            <div
+              // onClick={() => {
+              //   var newItem = {
+              //     img: props.item.images[0],
+              //     title: props.item.title,
+              //     id: props.item._id,
+              //     price: props.item.price,
+              //     discount: props.item.discount,
+              //     quantity: 1,
+              //   };
+              //   addCart(newItem);
+              // }}
+              className="hover:border-white/40 focus:bg-green-700 cursor-pointer flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-5 py-2.5 text-center text-sm font-medium text-white focus:outline-none focus:ring-4 focus:ring-blue-300"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-            Add to cart
-          </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="mr-2 h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+              Proceed to buy
+            </div>
+          </Link>
         </div>
       </div>
     </>
@@ -199,7 +206,11 @@ export function ProductsGrid(props) {
       <Grid container spacing={1}>
         {merch.map((item, index) => (
           <Grid item xs={6} sm={6} md={3}>
-            <EcomCard item={item} addCart={addCart} />
+            <EcomCard
+              item={item}
+              addCart={addCart}
+              conversionRate={props.conversionRate}
+            />
           </Grid>
         ))}
       </Grid>
@@ -212,6 +223,7 @@ export default function Store() {
   var [showMore, setShowMore] = useState(false);
   var [cats, setCats] = useState([]);
   var [selectedCats, setSelectedCats] = useState([]);
+  const [conversionRate, setConversionRate] = useState();
   function fetchMerch() {
     var config = {
       method: "post",
@@ -232,8 +244,19 @@ export default function Store() {
     });
   }
 
+  function fetchConversionRate() {
+    axios
+      .get(process.env.REACT_APP_API_BASE_URL + "/conversionRate")
+      .then((response) => {
+        if (response.status === 200) {
+          setConversionRate(response.data);
+        }
+      });
+  }
+
   useEffect(() => {
     fetchMerch();
+    fetchConversionRate();
     var config = {
       url: process.env.REACT_APP_API_BASE_URL + "/getmerchcats",
       method: "get",
@@ -297,7 +320,12 @@ export default function Store() {
               </div>
             </div>
 
-            {filteredList.length > 0 && <ProductsGrid merch={filteredList} />}
+            {filteredList.length > 0 && (
+              <ProductsGrid
+                merch={filteredList}
+                conversionRate={conversionRate}
+              />
+            )}
           </div>
           {showMore && (
             <div className="flex pt-3 pb-3 justify-center w-full">

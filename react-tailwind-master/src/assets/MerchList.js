@@ -171,17 +171,17 @@ export default function ProductList(props) {
 }
 
 function EditMerch(props) {
-  var [showModal, setShowModal] = useState(false);
-  var [title, setTitle] = useState(props.item.title);
-  var [price, setPrice] = useState(props.item.price);
-  var [discount, setDiscount] = useState(props.item.discount);
-  var [description, setDescription] = useState(props.item.description);
-  var [quantity, setQuantity] = useState(props.item.quantity);
-  var [images, setImages] = useState(null);
-  var [bits, setBits] = useState(props.item.bits);
-  var [thumbnail, setThumbnail] = useState("");
-  var [bitsLimit, setBitLimits] = useState(props.item.bitsLimit);
-  var [imagesHaveChanged, setImagesHaveChanged] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [title, setTitle] = useState(props.item.title);
+  const [price, setPrice] = useState(props.item.price);
+  const [discount, setDiscount] = useState(props.item.discount);
+  const [description, setDescription] = useState(props.item.description);
+  const [quantity, setQuantity] = useState(props.item.quantity);
+  const [images, setImages] = useState(null);
+  const [bits, setBits] = useState(props.item.bits);
+  const [thumbnail, setThumbnail] = useState("");
+  const [bitsLimit, setBitLimits] = useState(props.item.bitsLimit);
+  const [imagesHaveChanged, setImagesHaveChanged] = useState(false);
 
   useEffect(() => {
     var config = {
@@ -297,19 +297,6 @@ function EditMerch(props) {
                     setImagesHaveChanged={setImagesHaveChanged}
                     setThumbnail={setThumbnail}
                   />
-                  {/* {images.map((img) => (
-                    <div>
-                      <img
-                        src={img}
-                        alt="product images"
-                        className="mx-1 object-fit w-10 h-10 rounded-lg"
-                      />
-                      {/* <span className="absolute top-0 bg-gray-200 px-1 py-1 text-black">
-                        X
-                      </span> 
-                    </div>
-                  ))}
-                */}
                 </div>
                 <form className="space-y-2" action="#">
                   <div>
@@ -333,26 +320,6 @@ function EditMerch(props) {
                       }}
                     />
                   </div>
-                  <div>
-                    <label
-                      for="helper-text"
-                      class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Price
-                    </label>
-                    <input
-                      type="Number"
-                      name="price"
-                      id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                      placeholder="Price"
-                      required
-                      value={price}
-                      onChange={(e) => {
-                        setPrice(e.target.value);
-                      }}
-                    />
-                  </div>
 
                   <div>
                     <label
@@ -373,6 +340,49 @@ function EditMerch(props) {
                         setDescription(e.target.value);
                       }}
                     />
+                  </div>
+                  <div className="flex flex-row gap-2">
+                    <div className="w-full">
+                      <label
+                        for="helper-text"
+                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        Price
+                      </label>
+                      <input
+                        type="Number"
+                        name="price"
+                        id="email"
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                        placeholder="Price"
+                        required
+                        value={price}
+                        onChange={(e) => {
+                          setPrice(e.target.value);
+                        }}
+                      />
+                    </div>
+                    <div className="w-full">
+                      <label
+                        for="helper-text"
+                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        Bits Limit
+                      </label>
+                      <input
+                        type="Number"
+                        name="price"
+                        id="email"
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                        placeholder="Bits Limit"
+                        required
+                        min={0}
+                        max={price * 2}
+                        onChange={(e) => {
+                          setBitLimits(e.target.value);
+                        }}
+                      />
+                    </div>
                   </div>
                   <div className="flex flex-row">
                     <div className="mr-1">
