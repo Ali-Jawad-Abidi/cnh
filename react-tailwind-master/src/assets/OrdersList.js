@@ -42,7 +42,10 @@ export default function OrdersList(props) {
   var filteredOrders =
     orders !== null
       ? orders.filter((order) => {
-          return order.user.includes(search) || order.username.includes(search);
+          return (
+            order.user.toLowerCase().includes(search.toLowerCase()) ||
+            order.username.toLowerCase().includes(search.toLowerCase())
+          );
         })
       : [];
 
@@ -145,7 +148,7 @@ export default function OrdersList(props) {
               <td class="px-2 py-4">
                 <div class="flex items-center">
                   <div class="h-2.5 w-2.5 rounded-full bg-green-500 mr-2"></div>{" "}
-                  ${order.total}
+                  £{order.total}
                 </div>
               </td>
 
@@ -314,11 +317,11 @@ function ShowOrder(props) {
                             {item.title}
                           </span>
                           <span className="float-left text-gray-400 dark:text-white">
-                            ${item.price.toFixed(2) - item.discount / 100}x
+                            £{item.price.toFixed(2) - item.discount / 100}x
                             {item.quantity}
                           </span>
                           <p className="text-lg font-bold dark:text-white">
-                            $
+                            £
                             {(item.price.toFixed(2) - item.discount / 100) *
                               item.quantity}
                           </p>

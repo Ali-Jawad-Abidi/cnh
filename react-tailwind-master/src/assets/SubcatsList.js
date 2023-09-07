@@ -52,7 +52,7 @@ export default function SubcatsList(props) {
   var filteredSubcats =
     subcats !== null
       ? subcats.filter((subcat) => {
-          return subcat.name.includes(search);
+          return subcat.name.toLowerCase().includes(search.toLowerCase());
         })
       : [];
 

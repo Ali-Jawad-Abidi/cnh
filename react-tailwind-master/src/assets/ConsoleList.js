@@ -61,10 +61,10 @@ export default function ConsoleList(props) {
 
   var filteredConsoles = props.unapproved
     ? unapprovedconsoles.filter((console) => {
-        return console.name.includes(search);
+        return console.name.toLowerCase().includes(search.toLowerCase());
       })
     : consoles.filter((console) => {
-        return console.name.includes(search);
+        return console.name.toLowerCase().includes(search.toLowerCase());
       });
 
   if (props.unapproved ? !unapprovedconsoles : !consoles) return <Loading />;

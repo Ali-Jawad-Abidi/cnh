@@ -15,7 +15,9 @@ import Breadcrumb from "./BreadCrumb";
 export default function ListingPage(props) {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
-  const [type, setType] = useState(searchParams.get("type"));
+  const [consoleType, setConsoleType] = useState(
+    searchParams.get("type") || "console"
+  );
   const Id = searchParams.get(useParams().subcat);
   const brandId = searchParams.get(useParams().brand);
 
@@ -24,18 +26,34 @@ export default function ListingPage(props) {
 
   function fetchData() {
     var config = {};
+
+    if ((Id === undefined || Id === null) && props.show === "latest") {
+      var config = {
+        method: "get",
+        url: process.env.REACT_APP_API_BASE_URL + "/showLatest",
+        params: { start: consoles ? consoles.length : 0, type: consoleType },
+      };
+
+      axios(config).then((res) => {
+        if (res.status === 200) {
+          var arr = consoles === null ? [] : consoles;
+          arr = arr.concat(res.data);
+          setConsoles(arr);
+          // setShowMore(!res.data.isEnd);
+        }
+      });
+    }
     if (Id === undefined || Id === null) {
       config = {
         method: "get",
         url: process.env.REACT_APP_API_BASE_URL + "/getallconsoles",
         params: {
           start: consoles === null ? 0 : consoles.length,
+          type: consoleType,
         },
       };
       axios(config).then(function (response) {
-        console.log(response.data);
         if (response.status === 200) {
-          console.log(response.data);
           var arr = consoles === null ? [] : consoles;
           arr = arr.concat(response.data.consoles);
           setConsoles(arr);
@@ -53,7 +71,6 @@ export default function ListingPage(props) {
       };
       axios(config).then(function (response) {
         if (response.status === 200) {
-          console.log(response.data);
           var arr = consoles === null ? [] : consoles;
           arr = arr.concat(response.data.consoles);
           setConsoles(arr);
@@ -65,7 +82,7 @@ export default function ListingPage(props) {
 
   useEffect(() => {
     fetchData();
-  }, [type]);
+  }, [consoleType]);
 
   var ReleaseType = [
     "Retail",
@@ -98,22 +115,23 @@ export default function ListingPage(props) {
   const [regionalcode, setRegionalCode] = useState([]);
   const [color, setColor] = useState([]);
   const [country, setCountry] = useState([]);
-  const [consoleType, setConsoleType] = useState(type);
 
   var filteredList =
     consoles !== null
       ? consoles.filter((con) => {
           return (
-            ((releaseType.length === 0 ||
+            (releaseType.length === 0 ||
               releaseType.includes(con.releasetype)) &&
-              (regionalcode.length === 0 ||
-                regionalcode.includes(con.regionalcode)) &&
-              (color.length === 0 || color.includes(con.color)) &&
-              (country.length === 0 || country.includes(con.country)) &&
-              Id === null) ||
-            Id === undefined ||
-            consoleType === con.type
+            (regionalcode.length === 0 ||
+              regionalcode.includes(con.regionalcode)) &&
+            (color.length === 0 || color.includes(con.color)) &&
+            (country.length === 0 || country.includes(con.country)) &&
+            true
+            // (Id === null || Id === undefined ? consoleType === con.type : true)
           );
+          // Id === null)
+          // ||
+          // Id === undefined ||
         })
       : [];
 
@@ -131,68 +149,73 @@ export default function ListingPage(props) {
             <div style={{ alignItems: "left", textAlign: "left" }}>
               <div className="dark:bg-gray-800 dark:text-white p-4 shadow-xl">
                 <p className="font-bold text-xl">Filters</p>
-                {Id === undefined && (
-                  <>
-                    <Typography variant="h6"> Type </Typography>
-                    <div class="flex items-center mb-4">
-                      <input
-                        id="default-radio-1"
-                        type="radio"
-                        value=""
-                        checked={consoleType === "console" ? true : false}
-                        name="default-radio"
-                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                        onChange={(e) =>
-                          e.target.checked && setConsoleType("console")
-                        }
-                      />
-                      <label
-                        for="default-radio-1"
-                        class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-                      >
-                        Consoles
-                      </label>
-                    </div>
-                    <div class="flex items-center mb-4">
-                      <input
-                        id="default-radio-2"
-                        type="radio"
-                        value=""
-                        checked={consoleType === "mobile" ? true : false}
-                        name="default-radio"
-                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                        onChange={(e) =>
-                          e.target.checked && setConsoleType("mobile")
-                        }
-                      />
-                      <label
-                        for="default-radio-2"
-                        class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-                      >
-                        Mobiles
-                      </label>
-                    </div>
-                    <div class="flex items-center mb-4">
-                      <input
-                        id="default-radio-3"
-                        type="radio"
-                        value=""
-                        checked={consoleType === "pc" ? true : false}
-                        name="default-radio"
-                        class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                        onChange={(e) =>
-                          e.target.checked && setConsoleType("pc")
-                        }
-                      />
-                      <label
-                        for="default-radio-3"
-                        class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-                      >
-                        PCs
-                      </label>
-                    </div>
-                  </>
-                )}
+                {Id === undefined ||
+                  (Id === null && (
+                    <>
+                      <Typography variant="h6"> Type </Typography>
+
+                      <div class="flex items-center mb-4">
+                        <input
+                          id="default-radio-1"
+                          type="radio"
+                          value=""
+                          checked={consoleType === "console" ? true : false}
+                          name="default-radio"
+                          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          onChange={(e) => {
+                            e.target.checked && setConsoleType("console");
+                            setConsoles([]);
+                          }}
+                        />
+                        <label
+                          for="default-radio-1"
+                          class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                        >
+                          Consoles
+                        </label>
+                      </div>
+                      <div class="flex items-center mb-4">
+                        <input
+                          id="default-radio-2"
+                          type="radio"
+                          value=""
+                          checked={consoleType === "mobile" ? true : false}
+                          name="default-radio"
+                          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          onChange={(e) => {
+                            e.target.checked && setConsoleType("mobile");
+                            setConsoles([]);
+                          }}
+                        />
+                        <label
+                          for="default-radio-2"
+                          class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                        >
+                          Mobiles
+                        </label>
+                      </div>
+                      <div class="flex items-center mb-4">
+                        <input
+                          id="default-radio-3"
+                          type="radio"
+                          value=""
+                          checked={consoleType === "pc" ? true : false}
+                          name="default-radio"
+                          class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                          onChange={(e) => {
+                            e.target.checked && setConsoleType("pc");
+                            setConsoles([]);
+                          }}
+                        />
+                        <label
+                          for="default-radio-3"
+                          class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                        >
+                          PCs
+                        </label>
+                      </div>
+                    </>
+                  ))}
 
                 <p className="text-lg dark:text-white text-left mb-1">
                   Release Type

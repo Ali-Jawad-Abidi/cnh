@@ -44,8 +44,8 @@ export default function Nostalgiabase(props) {
           pcbrands !== null &&
           mobilebrands !== null && (
             <Grid container>
-              <Grid item xs={1} md={1}></Grid>
-              <Grid item xs={10} md={10}>
+              <Grid item xs={1} md={1} sm={1}></Grid>
+              <Grid item xs={10} md={10} sm={1}>
                 <Hottopics
                   title="Brands"
                   brands={consolebrands}

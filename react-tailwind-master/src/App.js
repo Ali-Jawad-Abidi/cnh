@@ -1,11 +1,12 @@
 // import "./styles.css";
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useState } from "react";
 import HomePage from "./assets/HomePage";
 import { Route, Routes } from "react-router";
 import Logout from "./assets/Logout";
 import Loading from "./assets/Loading";
 import LatestConsoles from "./assets/LatestConsoles";
 import VerifyEmail from "./assets/VerifyEmailPage";
+import HtmlParser from "./assets/HtmlParser";
 // import SnakeGame from "./assets/Snake";
 
 const Nostalgiabase = lazy(() => import("./assets/Nostalgiabase"));
@@ -34,16 +35,29 @@ const BitsLog = lazy(() => import("./assets/BitsLog"));
 // import PopUp from "./assets/PopUp";
 
 export default function App() {
+  // var [html, setHtml] = useState("");
   return (
     // <ProductProvider>
     <div className="App bg-white dark:bg-gray-900">
       {/* <PopUp /> */}
       {/* <SnakeGame /> */}
+      {/* <WysiwygEditor /> */}
+
+      {/* <div>
+        <input
+          type="text"
+          id="table-search-users"
+          class="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          placeholder="Search for Uploads"
+          onChange={(e) => setHtml(e.target.value)}
+        />
+        <HtmlParser htmlContent={html} />
+      </div> */}
 
       <Suspense fallback={<Loading />}>
         <Routes>
           <Route exact path="/" element={<HomePage page="Home" />} />
-          <Route exact path="/verify/:id" element={<Verify />} />
+          <Route exact path="/verify" element={<Verify />} />
           <Route
             exact
             path="/nostalgiabase"
@@ -126,7 +140,12 @@ export default function App() {
             index
             element={<AdminDashboard />}
           />
-          <Route exact path="/latest" index element={<LatestConsoles />} />
+          <Route
+            exact
+            path="/latest"
+            index
+            element={<ListingPage show="latest" />}
+          />
           <Route exact path="/verifyEmail" index element={<VerifyEmail />} />
           <Route exact path="/patreon" index element={<PatreonLinking />} />
           <Route

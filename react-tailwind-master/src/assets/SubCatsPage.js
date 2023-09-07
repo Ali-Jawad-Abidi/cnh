@@ -54,8 +54,8 @@ export default function SubCats(props) {
         <Header />
         <Breadcrumb />
         <Grid container>
-          <Grid item xs={0.5} md={0.5} sm={0.5}></Grid>
-          <Grid item xs={11} md={11} sm={11}>
+          <Grid item xs={1} md={1} sm={1}></Grid>
+          <Grid item xs={10} md={10} sm={10}>
             <SubCatsGrid subcats={subcats} type={type} brand={brand} />
           </Grid>
         </Grid>

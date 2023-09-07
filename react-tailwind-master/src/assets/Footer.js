@@ -93,7 +93,7 @@ function Foot(props) {
                   About
                 </a>
               </li>
-              <li>
+              {/* <li>
                 <p
                   onClick={() => {
                     setShowModal(true);
@@ -107,9 +107,13 @@ function Foot(props) {
                 <a href="/" class="mr-4 hover:underline md:mr-6 ">
                   Licensing
                 </a>
-              </li>
+              </li> */}
               <li>
-                <a href="/" class="hover:underline">
+                <a
+                  href="https://discord.gg/tYQ7yzN6Jf"
+                  target="_blank"
+                  class="hover:underline"
+                >
                   Contact
                 </a>
               </li>

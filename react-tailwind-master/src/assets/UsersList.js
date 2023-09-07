@@ -8,7 +8,6 @@ import icon from "./img/defaulticon.webp";
 export default function UserList(props) {
   var [search, setSearch] = useState("");
   var [users, setUsers] = useState([]);
-  var filteredUsers;
   var [showMore, setShowMore] = useState();
 
   function fetchData() {
@@ -50,7 +49,7 @@ export default function UserList(props) {
   var filteredUsers =
     users !== null
       ? users.filter((user) => {
-          return user.username.includes(search);
+          return user.username.toLowerCase().includes(search.toLowerCase());
         })
       : [];
 
@@ -144,25 +143,33 @@ export default function UserList(props) {
               <td class="px-6 py-4">
                 <button
                   onClick={() => {
-                    setUsers(
-                      users.filter((u) => {
-                        return user._id !== u._id;
-                      })
-                    );
-                    var config = {
-                      method: "post",
-                      url: process.env.REACT_APP_API_BASE_URL + "/removeuser",
-                      data: {
-                        userid: JSON.parse(localStorage.getItem("userid")),
-                        id: user._id,
-                      },
-                    };
+                    if (
+                      confirm(
+                        "Are you sure you want to delete User: " +
+                          user.username +
+                          "?"
+                      )
+                    ) {
+                      setUsers(
+                        users.filter((u) => {
+                          return user._id !== u._id;
+                        })
+                      );
+                      var config = {
+                        method: "post",
+                        url: process.env.REACT_APP_API_BASE_URL + "/removeuser",
+                        data: {
+                          userid: JSON.parse(localStorage.getItem("userid")),
+                          id: user._id,
+                        },
+                      };
 
-                    axios(config).then(function (response) {
-                      if (response.status === 200) {
-                        console.log(response.data);
-                      }
-                    });
+                      axios(config).then(function (response) {
+                        if (response.status === 200) {
+                          console.log(response.data);
+                        }
+                      });
+                    }
                   }}
                   class="font-medium bg-red-600 rounded-xl px-3 py-2 text-white hover:bg-red-700"
                 >

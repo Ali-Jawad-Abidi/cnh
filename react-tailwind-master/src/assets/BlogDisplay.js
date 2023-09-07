@@ -6,6 +6,7 @@ import { useState } from "react";
 import axios from "axios";
 import Header from "./Header";
 import Loading from "./Loading";
+import HtmlParser from "./HtmlParser";
 
 export default function BlogDisplay(prop) {
   var [blog, setBlog] = useState(null);
@@ -36,12 +37,21 @@ export default function BlogDisplay(prop) {
               alt="blog image"
               className="w-full h-96 lg:px-1 px-1 object-cover"
             />
-            <p className="text-left whitespace-pre-wrap text-lg dark:text-white pt-4">
-              {blog.text}
-            </p>
+
+            {/* <div
+              dangerouslySetInnerHTML={{ __html: blog.text }}
+              className="list-disc list-inside" // Apply Tailwind CSS classes for list styling
+            ></div> */}
+            <HtmlParser htmlContent={blog.text} />
           </div>
         </div>
-        <CommentBox type="blog" post={blog._id} comments={blog.comments} />
+
+        <CommentBox
+          type="blog"
+          post={blog._id}
+          comments={blog.comments}
+          disableComments={blog.disableComments}
+        />
       </div>
       <Footer />
     </div>

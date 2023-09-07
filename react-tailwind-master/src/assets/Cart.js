@@ -3,28 +3,76 @@ import { Dialog, Transition } from "@headlessui/react";
 import CloseIcon from "@mui/icons-material/Close";
 import { useEffect } from "react";
 import React from "react";
+import axios from "axios";
 
 export default function Cart(props) {
   const [open, setOpen] = useState(true);
-  var [cartItems, setCartItems] = useState({});
+  var [cartItems, setCartItems] = useState([]);
   var [total, setTotal] = useState(0);
 
   useEffect(() => {
-    var Items = JSON.parse(localStorage.getItem("cart")) || [];
-    setCartItems(Items);
-    var t = 0;
-    Items.map((item) => {
-      t = t + (item.price - (item.price * item.discount) / 100) * item.quantity;
-    });
-    setTotal(t);
+    if (
+      "cartID" in sessionStorage &&
+      sessionStorage.getItem("cartID").length > 0
+    ) {
+      var config = {
+        method: "post",
+        url: process.env.REACT_APP_API_BASE_URL + "/getCart",
+        data: {
+          id:
+            "cartID" in sessionStorage
+              ? sessionStorage.getItem("cartID")
+              : undefined,
+        },
+      };
+
+      axios(config)
+        .then((response) => {
+          if (response.status === 200) {
+            setCartItems(response.data.cart);
+            setTotal(response.data.total);
+          }
+        })
+        .catch((error) => {
+          console.log(error.response.data);
+        });
+    }
   }, []);
 
-  const remove = (newItem) => {
-    var cart = JSON.parse(localStorage.getItem("cart")) || [];
-    cart = cart.filter((item) => item.id !== newItem.id);
-    setCartItems(cart);
-    localStorage.setItem("cart", JSON.stringify(cart));
-    window.dispatchEvent(new Event("storage"));
+  const remove = (indexToRemove) => {
+    var config = {
+      method: "post",
+      url: process.env.REACT_APP_API_BASE_URL + "/removeCart",
+      data: {
+        cartId:
+          "cartID" in sessionStorage
+            ? sessionStorage.getItem("cartID")
+            : undefined,
+        indexToRemove: indexToRemove,
+      },
+    };
+
+    axios(config)
+      .then((response) => {
+        if (response.status === 200) {
+          // Create a copy of the current state array
+          const updatedItems = [...cartItems];
+
+          // Use splice to remove the item at the desired index
+          // updatedItems.splice(indexToRemove, 1);
+
+          // Or, use filter to remove the item at the desired index
+          const filteredItems = updatedItems.filter(
+            (_, index) => index !== indexToRemove
+          );
+
+          // Update the state with the new array
+          setCartItems(filteredItems);
+        }
+      })
+      .catch((error) => {
+        alert(error.response.data);
+      });
   };
 
   return (
@@ -82,8 +130,8 @@ export default function Cart(props) {
                             className="-my-6 divide-y divide-gray-200"
                           >
                             {cartItems.length > 0 ? (
-                              cartItems.map((product) => (
-                                <li key={product.id} className="flex py-6">
+                              cartItems.map((product, index) => (
+                                <li key={index} className="flex py-6">
                                   <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
                                     <img
                                       src={product.img}
@@ -98,27 +146,27 @@ export default function Cart(props) {
                                         <h3>
                                           <a href={"#"}>{product.title}</a>
                                         </h3>
-                                        <p className="ml-4">
-                                          $
-                                          {product.price -
-                                            (product.price * product.discount) /
-                                              100}
-                                        </p>
+                                        <p className="ml-4">£{product.price}</p>
                                       </div>
                                       <p className="mt-1 text-sm text-gray-500 dark:text-white">
                                         {product.color}
                                       </p>
                                     </div>
                                     <div className="flex flex-1 items-end justify-between text-sm">
-                                      <p className="text-gray-500 dark:text-white">
-                                        Qty {product.quantity}
-                                      </p>
+                                      <div className="flex flex-col gap-2">
+                                        <p className="text-gray-500 dark:text-white">
+                                          Qty {product.quantity}
+                                        </p>
+                                        {/* <p className="text-left text-gray-500 text-sm font-bold">
+                                          {product.totalPrice}
+                                        </p> */}
+                                      </div>
 
                                       <div className="flex">
                                         <button
                                           type="button"
                                           onClick={() => {
-                                            remove(product);
+                                            remove(index);
                                           }}
                                           className="font-medium text-indigo-600 hover:text-indigo-500"
                                         >

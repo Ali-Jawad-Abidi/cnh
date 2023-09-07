@@ -8,6 +8,10 @@ export default function CommentBox(props) {
   var [text, setText] = useState("");
   var [comments, setComments] = useState([]);
 
+  var [isAdmin, setIsAdmin] = useState(false);
+  var id = JSON.parse(localStorage.getItem("userid")) || null;
+  var token = JSON.parse(localStorage.getItem("token")) || null;
+
   useEffect(() => {
     if (props.comments !== undefined && props.comments.length > 0) {
       var config = {
@@ -21,6 +25,22 @@ export default function CommentBox(props) {
           setComments(response.data);
         }
       });
+    }
+
+    if (id !== null && token !== null) {
+      var config = {
+        method: "post",
+        url: process.env.REACT_APP_API_BASE_URL + "/isadmin",
+        data: { id: id, token: token },
+      };
+
+      axios(config).then((response) => {
+        if (response.status === 200) {
+          setIsAdmin(true);
+        }
+      });
+    } else {
+      setIsAdmin(false);
     }
   }, []);
 
@@ -70,6 +90,8 @@ export default function CommentBox(props) {
     });
   }
 
+  console.log(props);
+
   if ("userid" in localStorage)
     return (
       <div className="dark:bg-gray-800 shadow-lg p-4 rounded-lg w-full">
@@ -77,22 +99,26 @@ export default function CommentBox(props) {
           Discussions({comments.length})
         </div>
         <div className="flex flex-col">
-          <textarea
-            id="message"
-            rows="4"
-            value={text}
-            class="bg-gray-90 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white mt-2"
-            placeholder="Comment..."
-            onChange={(e, v) => setText(e.target.value)}
-          ></textarea>
-          <button
-            onClick={(e) => {
-              PostComment(e);
-            }}
-            className="button mt-2 lg:w-1/5 w-2/5 float-left no-wrap text-xs lg:text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-3 py-2"
-          >
-            Post Comment
-          </button>
+          {!props.disableComments && (
+            <div>
+              <textarea
+                id="message"
+                rows="4"
+                value={text}
+                class="bg-gray-90 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white mt-2"
+                placeholder="Comment..."
+                onChange={(e, v) => setText(e.target.value)}
+              ></textarea>
+              <button
+                onClick={(e) => {
+                  PostComment(e);
+                }}
+                className="button mt-2 lg:w-1/5 w-2/5 float-left no-wrap text-xs lg:text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-3 py-2"
+              >
+                Post Comment
+              </button>
+            </div>
+          )}
 
           <div className="mt-10">
             {comments.map((comment) => (
@@ -127,6 +153,45 @@ export default function CommentBox(props) {
                 <div className="ml-6 text-left dark:text-gray-300">
                   {comment.text}
                 </div>
+                <div>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            "Are you sure you want to delete this comment?"
+                          )
+                        ) {
+                          const config = {
+                            method: "post",
+                            url:
+                              process.env.REACT_APP_API_BASE_URL +
+                              "/deleteComment",
+                            data: {
+                              postId: props.post,
+                              commentId: comment._id,
+                              postType: props.type,
+                            },
+                          };
+                          axios(config).then((response) => {
+                            if (response.status === 200) {
+                              setComments(
+                                comments.filter((cmt) => {
+                                  return cmt._id !== comment._id;
+                                })
+                              );
+                            } else {
+                              alert("Error Deleting Comment");
+                            }
+                          });
+                        }
+                      }}
+                      className=" ml-6 text-sm bg-red-600 hover:bg-red-700 text-white px-1 rounded-lg float-left"
+                    >
+                      Delete Comment
+                    </button>
+                  )}
+                </div>
                 <hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700"></hr>
               </div>
             ))}
@@ -147,7 +212,7 @@ export default function CommentBox(props) {
               onClick={() => {
                 localStorage.setItem(
                   "redirectTo",
-                  JSON.stringify(window.location.pathname)
+                  JSON.stringify(window.location.href)
                 );
               }}
               className="text-blue-600 hover:underline"
@@ -181,9 +246,7 @@ export default function CommentBox(props) {
                   </div>
                   {/* </Link> */}
                 </div>
-                <div className="ml-6 text-left dark:text-gray-300">
-                  {comment.text}
-                </div>
+
                 <hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700"></hr>
               </div>
             ))}

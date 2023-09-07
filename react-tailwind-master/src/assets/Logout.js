@@ -1,13 +1,18 @@
 import { useEffect } from "react";
 import axios from "axios";
-import React from "react";
 
 export default function Logout() {
   useEffect(() => {
     var config = {
-      method: "get",
+      method: "post",
       url: process.env.REACT_APP_API_BASE_URL + "/logout",
-      params: { token: JSON.parse(localStorage.getItem("token")) },
+      params: {
+        id:
+          "userid" in localStorage
+            ? JSON.parse(localStorage.getItem("userid"))
+            : undefined,
+        accessToken: JSON.parse(localStorage.getItem("token")),
+      },
     };
 
     axios(config).then(function (response) {

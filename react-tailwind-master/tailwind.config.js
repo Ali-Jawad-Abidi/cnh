@@ -19,7 +19,7 @@ module.exports = {
     // require('@tailwindcss/typography'),
     // require('@tailwindcss/forms'),
     // require('@tailwindcss/aspect-ratio'),
-    require("@tailwindcss/line-clamp"),
+    // require("@tailwindcss/line-clamp"),
     require("@tailwindcss/forms"),
   ],
 };

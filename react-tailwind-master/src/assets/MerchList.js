@@ -2,11 +2,23 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import ImageGrid from "./ImageGrid";
 import React from "react";
+import WysiwygEditor from "./TextArea";
 
 export default function ProductList(props) {
   var [products, setProducts] = useState([]);
   var [search, setSearch] = useState("");
   var [showMore, setShowMore] = useState(false);
+  const [conversionRate, setConversionRate] = useState(1);
+
+  function fetchConversionRate() {
+    axios
+      .get(process.env.REACT_APP_API_BASE_URL + "/conversionRate")
+      .then((response) => {
+        if (response.status === 200) {
+          setConversionRate(response.data);
+        }
+      });
+  }
 
   function fetchData() {
     var config = {
@@ -22,6 +34,7 @@ export default function ProductList(props) {
         setShowMore(!response.data.isEnd);
       }
     });
+    fetchConversionRate();
   }
 
   useEffect(() => {
@@ -44,7 +57,7 @@ export default function ProductList(props) {
   var filteredProducts =
     products !== null
       ? products.filter((product) => {
-          return product.title.toLowerCase().includes(search);
+          return product.title.toLowerCase().includes(search.toLowerCase());
         })
       : [];
 
@@ -78,7 +91,7 @@ export default function ProductList(props) {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <AddMerch onAdd={onAdd} />
+        <AddMerch onAdd={onAdd} conversionRate={conversionRate} />
       </div>
       <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
         <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
@@ -126,7 +139,11 @@ export default function ProductList(props) {
               </td>
 
               <td class="px-6 py-4">
-                <EditMerch item={product} onUpdate={onUpdate} />
+                <EditMerch
+                  item={product}
+                  onUpdate={onUpdate}
+                  conversionRate={conversionRate}
+                />
               </td>
               <td class="px-6 py-4">
                 <button
@@ -171,6 +188,7 @@ export default function ProductList(props) {
 }
 
 function EditMerch(props) {
+  console.log(props.item);
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState(props.item.title);
   const [price, setPrice] = useState(props.item.price);
@@ -205,28 +223,13 @@ function EditMerch(props) {
     e.preventDefault();
 
     var newMerch = Object();
-    if (title !== props.item.title) {
-      newMerch.title = title;
-    }
-    if (price !== props.item.price) {
-      newMerch.price = price;
-    }
-    if (discount !== props.item.discount) {
-      newMerch.discount = discount;
-    }
-    if (description !== props.item.description) {
-      newMerch.description = description;
-    }
-    if (quantity !== props.item.quantity) {
-      newMerch.quantity = quantity;
-    }
-
-    if (bits !== props.item.bits) {
-      newMerch.bits = bits;
-    }
-    if (bitsLimit !== props.item.bitsLimit) {
-      newMerch.bitsLimit = bitsLimit;
-    }
+    newMerch.title = title;
+    newMerch.price = price;
+    newMerch.discount = discount;
+    newMerch.description = description;
+    newMerch.quantity = quantity;
+    newMerch.bits = bits;
+    newMerch.bitsLimit = bitsLimit;
 
     if (imagesHaveChanged) {
       newMerch.images = images;
@@ -321,26 +324,6 @@ function EditMerch(props) {
                     />
                   </div>
 
-                  <div>
-                    <label
-                      for="helper-text"
-                      class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Description
-                    </label>
-                    <input
-                      type="text"
-                      name="discount"
-                      id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                      placeholder="Description"
-                      required
-                      value={description}
-                      onChange={(e) => {
-                        setDescription(e.target.value);
-                      }}
-                    />
-                  </div>
                   <div className="flex flex-row gap-2">
                     <div className="w-full">
                       <label
@@ -367,19 +350,29 @@ function EditMerch(props) {
                         for="helper-text"
                         class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                       >
-                        Bits Limit
+                        Bits Limit max: (
+                        {(price - (price * discount) / 100) *
+                          props.conversionRate}
+                        )
                       </label>
                       <input
                         type="Number"
                         name="price"
                         id="email"
                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                        placeholder="Bits Limit"
+                        value={parseInt(bitsLimit)}
                         required
                         min={0}
-                        max={price * 2}
+                        max={price * props.conversionRate}
                         onChange={(e) => {
-                          setBitLimits(e.target.value);
+                          if (
+                            e.target.value <=
+                              (price - (price * discount) / 100) *
+                                props.conversionRate &&
+                            e.target.value >= 0
+                          ) {
+                            setBitLimits(e.target.value);
+                          }
                         }}
                       />
                     </div>
@@ -450,6 +443,18 @@ function EditMerch(props) {
                     </div>
                   </div>
                   <div>
+                    <label
+                      for="helper-text"
+                      class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >
+                      Description
+                    </label>
+                    <WysiwygEditor
+                      text={description}
+                      setText={setDescription}
+                    />
+                  </div>
+                  <div>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -502,6 +507,10 @@ function AddMerch(props) {
   function onSubmit(e) {
     e.preventDefault();
 
+    if (images.length < 1) {
+      alert("Please attach one or more upto 5 images.");
+      return false;
+    }
     if (cat === null || cat.length < 1) {
       alert("Please assign appropriate category");
       return false;
@@ -587,118 +596,6 @@ function AddMerch(props) {
                   thumbnail={thumbnail}
                 />
                 <form className="space-y-2" action="#">
-                  <div>
-                    <input
-                      type="text"
-                      name="title"
-                      id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                      placeholder="Title"
-                      required
-                      onChange={(e) => {
-                        setTitle(e.target.value);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <select
-                      id="cats"
-                      required
-                      onChange={(e) => {
-                        setCat(e.target.value);
-                      }}
-                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    >
-                      <option value="">Select Product Category</option>
-                      {cats.map((c, index) => (
-                        <option index={index} value={c.name}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <input
-                      type="Number"
-                      name="price"
-                      id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                      placeholder="Price"
-                      required
-                      onChange={(e) => {
-                        setPrice(e.target.value);
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <input
-                      type="Number"
-                      name="discount"
-                      id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                      placeholder="Discount"
-                      required
-                      onChange={(e) => {
-                        setDiscount(e.target.value);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="text"
-                      name="discount"
-                      id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                      placeholder="Link to console"
-                      required
-                      onChange={(e) => {
-                        setLink(e.target.value);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="text"
-                      name="discount"
-                      id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                      placeholder="Description"
-                      required
-                      onChange={(e) => {
-                        setDescription(e.target.value);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="Number"
-                      name="discount"
-                      id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                      placeholder="Quantity"
-                      required
-                      onChange={(e) => {
-                        setQuantity(e.target.value);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="Number"
-                      name="price"
-                      id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                      placeholder="Bits Limit"
-                      required
-                      min={0}
-                      max={price * 2}
-                      onChange={(e) => {
-                        setBitLimits(e.target.value);
-                      }}
-                    />
-                  </div>
-
                   <div className="flex justify-between">
                     <div className="flex items-start">
                       <div className="flex items-center h-4">
@@ -721,6 +618,179 @@ function AddMerch(props) {
                       </label>
                     </div>
                   </div>
+                  <div className="flex flex-row gap-2">
+                    <div className="w-full">
+                      <label
+                        for="helper-text"
+                        class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                      >
+                        Title
+                      </label>
+                      <input
+                        type="text"
+                        name="title"
+                        id="email"
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                        placeholder="Title"
+                        required
+                        onChange={(e) => {
+                          setTitle(e.target.value);
+                        }}
+                      />
+                    </div>
+                    <div className="w-full">
+                      <label
+                        for="helper-text"
+                        class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                      >
+                        Category
+                      </label>
+                      <select
+                        id="cats"
+                        required
+                        onChange={(e) => {
+                          setCat(e.target.value);
+                        }}
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      >
+                        <option value="">Select Product Category</option>
+                        <option value={"No Category"}>{"No Category"}</option>
+                        {cats.map((c, index) => (
+                          <option index={index} value={c.name}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex flex-row gap-2">
+                    <div>
+                      <label
+                        for="helper-text"
+                        class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                      >
+                        Price
+                      </label>
+                      <input
+                        type="Number"
+                        name="price"
+                        id="email"
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                        placeholder="Price"
+                        required
+                        onChange={(e) => {
+                          setPrice(e.target.value);
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        for="helper-text"
+                        class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                      >
+                        Discount
+                      </label>
+                      <input
+                        type="Number"
+                        name="discount"
+                        id="email"
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                        placeholder="Discount"
+                        required
+                        onChange={(e) => {
+                          setDiscount(e.target.value);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      for="helper-text"
+                      class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                    >
+                      Link to console
+                    </label>
+                    <input
+                      type="text"
+                      name="discount"
+                      id="email"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                      placeholder="Link to console"
+                      required
+                      onChange={(e) => {
+                        setLink(e.target.value);
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex flex-row gap-2">
+                    <div className="w-full">
+                      <label
+                        for="helper-text"
+                        class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                      >
+                        Quantity
+                      </label>
+                      <input
+                        type="Number"
+                        name="discount"
+                        id="email"
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                        placeholder="Quantity"
+                        required
+                        onChange={(e) => {
+                          setQuantity(e.target.value);
+                        }}
+                      />
+                    </div>
+                    {bits && (
+                      <div className="w-full">
+                        <label
+                          for="helper-text"
+                          class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                        >
+                          Bits Limit
+                        </label>
+                        <input
+                          type="Number"
+                          name="price"
+                          id="email"
+                          placeholder="Bits Limit"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                          required
+                          min={0}
+                          max={price * props.conversionRate}
+                          onChange={(e) => {
+                            if (e.target.value < 0) {
+                              setBitLimits(0);
+                            } else if (
+                              e.target.value >
+                              price * props.conversionRate
+                            ) {
+                              setBitLimits(price * props.conversionRate);
+                            } else {
+                              setBitLimits(e.target.value);
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label
+                      for="helper-text"
+                      class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                    >
+                      Description
+                    </label>
+
+                    <WysiwygEditor
+                      text={description}
+                      setText={setDescription}
+                    />
+                  </div>
+
                   <div className="flex justify-space">
                     <button
                       type="button"
@@ -729,7 +799,7 @@ function AddMerch(props) {
                           setShowModal(false);
                         }
                       }}
-                      className="w-1/2 ml-1 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                      className="w-full ml-1 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                     >
                       Add to Store
                     </button>

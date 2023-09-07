@@ -8,53 +8,54 @@ import Loading from "./Loading";
 import Footer from "./Footer";
 import Header from "./Header";
 import Breadcrumb from "./BreadCrumb";
+import { Box } from "@mui/material";
 
-function Filter() {
-  var [cats, setCats] = useState([]);
-  var [selectedCats, setSelectedCats] = useState([]);
-  useEffect(() => {
-    var config = {
-      url: process.env.REACT_APP_API_BASE_URL + "/getmerchcats",
-      method: "get",
-    };
-    axios(config).then((response) => {
-      if (response.status === 200) {
-        setCats(response.data);
-      }
-    });
-  }, []);
-  return (
-    <div className="text-left text-xl">
-      <p class="text-white"> Categories</p>
-      <div className="flex flex-row gap-2 p-4 dark:bg-gray-800 bg-gray-200 rounded-lg w-full">
-        {cats.map((cat, index) => (
-          <div key={index} class="flex items-center">
-            <input
-              id={index}
-              type="checkbox"
-              value={cat.name}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              onChange={(e) => {
-                console.log(selectedCats);
-                e.target.checked
-                  ? setSelectedCats((oldArray) => [...oldArray, e.target.value])
-                  : setSelectedCats(
-                      selectedCats.filter((rel) => rel !== e.target.value)
-                    );
-              }}
-            />
-            <label
-              htmlfor={cat.name}
-              className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-            >
-              {cat.name}
-            </label>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+// function Filter() {
+//   var [cats, setCats] = useState([]);
+//   var [selectedCats, setSelectedCats] = useState([]);
+//   useEffect(() => {
+//     var config = {
+//       url: process.env.REACT_APP_API_BASE_URL + "/getmerchcats",
+//       method: "get",
+//     };
+//     axios(config).then((response) => {
+//       if (response.status === 200) {
+//         setCats(response.data);
+//       }
+//     });
+//   }, []);
+//   return (
+//     <div className="text-left text-xl">
+//       <p class="text-white"> Categories</p>
+//       <div className="flex flex-row gap-2 p-4 dark:bg-gray-800 bg-gray-200 rounded-lg w-full">
+//         {cats.map((cat, index) => (
+//           <div key={index} class="flex items-center">
+//             <input
+//               id={index}
+//               type="checkbox"
+//               value={cat.name}
+//               className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+//               onChange={(e) => {
+//                 console.log(selectedCats);
+//                 e.target.checked
+//                   ? setSelectedCats((oldArray) => [...oldArray, e.target.value])
+//                   : setSelectedCats(
+//                       selectedCats.filter((rel) => rel !== e.target.value)
+//                     );
+//               }}
+//             />
+//             <label
+//               htmlfor={cat.name}
+//               className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+//             >
+//               {cat.name}
+//             </label>
+//           </div>
+//         ))}
+//       </div>
+//     </div>
+//   );
+// }
 
 export function EcomCard(props) {
   const addCart = props.addCart;
@@ -69,7 +70,7 @@ export function EcomCard(props) {
           }}
         >
           <img
-            class="peer absolute top-0 right-0 h-full w-full object-cover hover:z-20"
+            class="peer absolute top-0 right-0 h-full w-full object-cover hover:z-20 hover:scale-110"
             src={props.item.thumbnail}
             alt="product image"
           />
@@ -113,17 +114,17 @@ export function EcomCard(props) {
               {props.item.discount > 0 ? (
                 <>
                   <span className="grow mt-2 text-3xl font-bold text-gray-700 dark:text-white">
-                    $
+                    £
                     {props.item.price -
                       (props.item.price * props.item.discount) / 100}
                   </span>
                   <sup className="text-sm pt-2 text-gray-700 line-through dark:text-white">
-                    ${props.item.price}
+                    £{props.item.price}
                   </sup>
                 </>
               ) : (
                 <span className="grow mt-2 text-3xl font-bold text-gray-700 dark:text-white">
-                  $
+                  £
                   {props.item.price -
                     (props.item.price * props.item.discount) / 100}
                 </span>
@@ -131,7 +132,7 @@ export function EcomCard(props) {
               <br />
               {props.item.bits && (
                 <span className="grow text-sm pt-2 text-gray-700 dark:text-white">
-                  {(props.item.price * props.conversionRate).toFixed(2)} Bits
+                  {props.item.bitsLimit} Bits
                 </span>
               )}
               {!props.item.bits && (
@@ -274,20 +275,25 @@ export default function Store() {
           return selectedCats.length === 0 || selectedCats.includes(m.category);
         })
       : [];
-  console.log(filteredList);
   return (
     <div className="relative bg-white rounded-lg shadow dark:bg-gray-900">
-      <Stack spacing={2}>
-        <Header />
-        <Breadcrumb />
-        <div className="p-4 flex flex-col gap-2 min-h-screen">
-          <h2 className="company uppercase text-blue-700 font-bold text-xl sm:text-md tracking-wider">
-            consolenostalgia store
-          </h2>
-          <div className="flex sm:flex-row lg:flex-col gap-2">
-            <div className="sticky top-2 text-left text-xl z-10">
-              <p class="text-white">Categories</p>
-              <div className="flex flex-row gap-2 p-4 dark:bg-gray-800 bg-gray-200 rounded-lg">
+      <Header />
+      <Breadcrumb />
+      <h2 className="company uppercase mt-4 text-blue-700 font-bold text-xl sm:text-md tracking-wider">
+        consolenostalgia store
+      </h2>
+
+      <div className="flex flex-row gap-4 min-h-full min-w-screen pl-4 mt-4">
+        <Box sx={{ display: { xs: "none", md: "none", lg: "flex" } }}>
+          <div className="flex flex-col p-4 dark:bg-gray-800 bg-gray-200 rounded-lg w-1/4">
+            <p className="text-2xl font-semibold text-left dark:text-white">
+              Filter
+            </p>
+            <p className="text-lg font-semibold text-left dark:text-white">
+              Categories
+            </p>
+            <div className="top-2 text-left text-xl z-10">
+              <div className="flex flex-col gap-2 dark:bg-gray-800 bg-gray-200 rounded-lg mt-2">
                 {cats.map((cat, index) => (
                   <div key={index} class="flex items-center">
                     <input
@@ -319,29 +325,34 @@ export default function Store() {
                 ))}
               </div>
             </div>
-
-            {filteredList.length > 0 && (
-              <ProductsGrid
-                merch={filteredList}
-                conversionRate={conversionRate}
-              />
-            )}
           </div>
-          {showMore && (
-            <div className="flex pt-3 pb-3 justify-center w-full">
-              <div
-                onClick={() => {
-                  fetchMerch();
-                }}
-                className="button  w-2/5 ml-10 px-10 py-3 bg-blue-700 rounded-lg lg:rounded-xl shadow-bg-blue-700 shadow-2xl text-white flex justify-center cursor-pointer hover:opacity-60"
-              >
-                Show More
-              </div>
-            </div>
+        </Box>
+
+        <div className="w-full">
+          {filteredList.length > 0 && (
+            <ProductsGrid
+              merch={filteredList}
+              conversionRate={conversionRate}
+            />
           )}
         </div>
-        <Footer />
-      </Stack>
+      </div>
+
+      <div className="p-4 flex flex-row gap-2 min-h-screen">
+        {showMore && (
+          <div className="flex pt-3 pb-3 justify-center w-full">
+            <div
+              onClick={() => {
+                fetchMerch();
+              }}
+              className="button  w-2/5 ml-10 px-10 py-3 bg-blue-700 rounded-lg lg:rounded-xl shadow-bg-blue-700 shadow-2xl text-white flex justify-center cursor-pointer hover:opacity-60"
+            >
+              Show More
+            </div>
+          </div>
+        )}
+      </div>
+      <Footer />
     </div>
   );
 }

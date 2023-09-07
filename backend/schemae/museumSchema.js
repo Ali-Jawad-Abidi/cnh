@@ -17,13 +17,9 @@ const MuseumSchema = new mongoose.Schema({
     type: Boolean,
     required: true,
   },
-  info: {
-    type: String,
-  },
-  thumbnail: {
-    type: String,
-    required: false,
-  },
+  // info: {
+  //   type: String,
+  // },
 });
 
 const Museum = mongoose.model("museum", MuseumSchema, "museum");

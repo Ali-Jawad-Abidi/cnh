@@ -7,6 +7,7 @@ import icon from "./img/defaulticon.webp";
 import ProfilePanel from "./ProfilePanel";
 import { Fragment } from "react";
 import { Menu, Transition } from "@headlessui/react";
+import axios from "axios";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -16,7 +17,7 @@ function DropDown(props) {
   return (
     <Menu as="div" className="relative inline-block text-left ">
       <div className="flex flex-row">
-        <Menu.Button className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-md text-gray-900 dark:bg-gray-800 dark:text-white">
+        <Menu.Button className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-md text-gray-900 dark:bg-gray-800 dark:text-white hover:text-blue-600">
           Connect
           <i className="-mr-1 h-5 w-5 text-gray-400" aria-hidden="true">
             <ion-icon name="chevron-down"></ion-icon>
@@ -132,6 +133,10 @@ const Header = (props) => {
   var [showCart, setShowCart] = useState(false);
   var [showProfilePanel, setShowProfilePanel] = useState(false);
   var [showModal, setShowModal] = useState(false);
+  const [bitAwards, setBitAwards] = useState({});
+  const [currentPage, setCurrentPage] = useState(
+    sessionStorage.getItem("currentPage") || "Home"
+  );
   var len =
     "cart" in localStorage
       ? JSON.parse(localStorage.getItem("cart")).length
@@ -144,10 +149,31 @@ const Header = (props) => {
       : icon;
 
   useEffect(() => {
-    window.addEventListener("storage", () => {
-      setTotal(JSON.parse(localStorage.getItem("cart")).length || 0);
-    });
+    if ("cartID" in sessionStorage) {
+      var config = {
+        method: "post",
+        url: process.env.REACT_APP_API_BASE_URL + "/getCartLength",
+        data: { cartId: sessionStorage.getItem("cartID") },
+      };
+
+      axios(config)
+        .then((response) => {
+          if (response.status === 200) {
+            setTotal(response.data);
+          }
+        })
+        .catch((error) => {
+          if (error.response.status === 404) {
+            sessionStorage.removeItem("cartID");
+          }
+        });
+    }
   }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem("currentPage", currentPage);
+  }, [currentPage]);
+
   const displayMenu = () => {
     navMenu.current.classList.toggle("!translate-x-0");
     darkScreen.current.classList.toggle("!opacity-60");
@@ -156,7 +182,21 @@ const Header = (props) => {
     hamburger.current.classList.toggle("!hidden");
   };
 
+  function handleCurrentPage(page) {
+    sessionStorage.setItem("currentPage", page);
+    setCurrentPage(page);
+  }
+
   var [search, setSearch] = useState("");
+  const fetchBitAwards = () => {
+    axios
+      .get(process.env.REACT_APP_API_BASE_URL + "/getBitsAward")
+      .then((response) => {
+        if (response.status === 200) {
+          setBitAwards(response.data);
+        }
+      });
+  };
 
   return (
     <header>
@@ -191,36 +231,96 @@ const Header = (props) => {
             className="menu fixed inset-0 right-1/3 bg-white dark:bg-gray-800 pt-20 z-30 px-7 -translate-x-full transition-all ease-in-out duration-500 lg:translate-x-0 lg:relative lg:w-max lg:p-0 lg:h-inherit lg:flex lg:items-center"
           >
             <ul className="font-bold lg:font-normal lg:flex lg:items-center text-lg lg:text-base pt-2 lg:p-0 lg:mx-4 lg:text-dark-grayish-blue lg:h-inherit">
-              <Link to={"/"} style={{ textDecoration: "none" }}>
-                <li className="mb-5 dark:text-white lg:mb-0 lg:mx-4 lg:h-inherit lg:flex lg:items-center cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
-                  Home
+              <div
+                onClick={() => {
+                  handleCurrentPage("Home");
+                }}
+              >
+                <Link to={"/"} style={{ textDecoration: "none" }}>
+                  <li className="mb-5 dark:text-white hover:text-blue-600 lg:mb-0 lg:mx-4 lg:h-inherit lg:flex lg:items-center cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
+                    {currentPage === "Home" ? (
+                      <span className="text-lg font-bold">Home</span>
+                    ) : (
+                      "Home"
+                    )}
+                  </li>
+                </Link>
+              </div>
+              <div
+                onClick={() => {
+                  handleCurrentPage("News");
+                }}
+              >
+                <Link to="/blogs" style={{ textDecoration: "none" }}>
+                  <li className="mb-5 lg:mb-0 lg:mx-4 hover:text-blue-600 dark:text-white lg:h-inherit lg:flex lg:items-center cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
+                    {currentPage === "News" ? (
+                      <span className="text-lg font-bold">News</span>
+                    ) : (
+                      "News"
+                    )}
+                  </li>
+                </Link>
+              </div>
+              <Link
+                to="/nostalgiabase"
+                style={{ textDecoration: "none" }}
+                onClick={() => {
+                  handleCurrentPage("NostalgiaBase");
+                }}
+              >
+                <li className="mb-5 lg:mb-0 lg:mx-4 hover:text-blue-600 lg:h-inherit dark:text-white lg:flex lg:items-center cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
+                  {currentPage === "NostalgiaBase" ? (
+                    <span className="text-lg font-bold">NostalgiaBase</span>
+                  ) : (
+                    "NostalgiaBase"
+                  )}
                 </li>
               </Link>
-              <Link to="/blogs" style={{ textDecoration: "none" }}>
-                <li className="mb-5 lg:mb-0 lg:mx-4 dark:text-white lg:h-inherit lg:flex lg:items-center cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
-                  News
+              <Link
+                to="/thewall"
+                style={{ textDecoration: "none" }}
+                onClick={() => {
+                  handleCurrentPage("Museum");
+                }}
+              >
+                <li className="mb-5 lg:mb-0 lg:mx-4 hover:text-blue-600 lg:h-inherit lg:flex dark:text-white lg:items-center cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
+                  {currentPage === "Museum" ? (
+                    <span className="text-lg font-bold">Museum</span>
+                  ) : (
+                    "Museum"
+                  )}
                 </li>
               </Link>
-              <Link to="/nostalgiabase" style={{ textDecoration: "none" }}>
-                <li className="mb-5 lg:mb-0 lg:mx-4 lg:h-inherit dark:text-white lg:flex lg:items-center cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
-                  NostalgiaBase
-                </li>
-              </Link>
-              <Link to="/thewall" style={{ textDecoration: "none" }}>
-                <li className="mb-5 lg:mb-0 lg:mx-4 lg:h-inherit lg:flex dark:text-white lg:items-center cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
-                  Museum
-                </li>
-              </Link>
-              <Link to="/store" style={{ textDecoration: "none" }}>
-                <li className="mb-5 lg:mb-0 lg:mx-4 lg:h-inherit lg:flex lg:items-center dark:text-white cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
-                  Store
+              <Link
+                to="/store"
+                style={{ textDecoration: "none" }}
+                onClick={() => {
+                  handleCurrentPage("Store");
+                }}
+              >
+                <li className="mb-5 lg:mb-0 lg:mx-4 hover:text-blue-600 lg:h-inherit lg:flex lg:items-center dark:text-white cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
+                  {currentPage === "Store" ? (
+                    <span className="text-lg font-bold">Store</span>
+                  ) : (
+                    "Store"
+                  )}
                 </li>
               </Link>
 
               {localStorage.getItem("userid") && (
-                <Link to="/bitslog" style={{ textDecoration: "none" }}>
-                  <li className="mb-5 lg:mb-0 lg:mx-4 lg:h-inherit dark:text-white lg:flex lg:items-center cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
-                    Bits Log
+                <Link
+                  to="/bitslog"
+                  style={{ textDecoration: "none" }}
+                  onClick={() => {
+                    handleCurrentPage("Bits Log");
+                  }}
+                >
+                  <li className="mb-5 lg:mb-0 lg:mx-4 hover:text-blue-600 lg:h-inherit dark:text-white lg:flex lg:items-center cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
+                    {currentPage === "Bits Log" ? (
+                      <span className="text-lg font-bold">Bits Log</span>
+                    ) : (
+                      "Bits Log"
+                    )}
                   </li>
                 </Link>
               )}
@@ -336,6 +436,83 @@ const Header = (props) => {
                   className="rounded-full"
                 />
                 {showProfilePanel && <ProfilePanel />}
+
+                {/* <button
+                  id="dropdownAvatarNameButton"
+                  data-dropdown-toggle="dropdownAvatarName"
+                  class="flex items-center text-sm font-medium text-gray-900 rounded-full hover:text-blue-600 dark:hover:text-blue-500 md:mr-0 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:text-white"
+                  type="button"
+                >
+                  <span class="sr-only">Open user menu</span>
+                  <img
+                    class="w-8 h-8 mr-2 rounded-full"
+                    src={icon}
+                    alt="user photo"
+                  />
+                  Bonnie Green
+                  <svg
+                    class="w-2.5 h-2.5 ml-2.5"
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 10 6"
+                  >
+                    <path
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="m1 1 4 4 4-4"
+                    />
+                  </svg>
+                </button> */}
+
+                <div
+                  id="dropdownAvatarName"
+                  class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600"
+                >
+                  <div class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                    <div class="font-medium ">Pro User</div>
+                    <div class="truncate">name@flowbite.com</div>
+                  </div>
+                  <ul
+                    class="py-2 text-sm text-gray-700 dark:text-gray-200"
+                    aria-labelledby="dropdownInformdropdownAvatarNameButtonationButton"
+                  >
+                    <li>
+                      <a
+                        href="#"
+                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                      >
+                        Dashboard
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                      >
+                        Settings
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                      >
+                        Earnings
+                      </a>
+                    </li>
+                  </ul>
+                  <div class="py-2">
+                    <a
+                      href="#"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
+                    >
+                      Sign out
+                    </a>
+                  </div>
+                </div>
               </div>
             ) : (
               <Link
@@ -344,7 +521,7 @@ const Header = (props) => {
                 onClick={() => {
                   localStorage.setItem(
                     "redirectTo",
-                    JSON.stringify(window.location.pathname)
+                    JSON.stringify(window.location.href)
                   );
                 }}
               >
@@ -362,7 +539,7 @@ const Header = (props) => {
         >
           <div className="relative w-full h-full max-w-lg h-auto max-h-[90%]">
             <div className="relative bg-white rounded-lg shadow dark:bg-gray-700">
-              <div className="px-6 py-6 lg:px-8">
+              <div className="py-2">
                 <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
                   <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
                     Bits Scheme
@@ -391,36 +568,40 @@ const Header = (props) => {
                     <span class="sr-only">Close modal</span>
                   </button>
                 </div>
-                <div class="p-6 space-y-6">
-                  <p class="text-sm leading-relaxed text-left text-gray-500 dark:text-gray-400">
-                    10 "bits" is equal to £1 on our store, but bits can not be
-                    traded with other users or for real-world currency.
-                    <br />
-                    Bits can be earned through actions such as:
-                    <br /> -Becoming a patreon member (one-off) - 50 bits
-                    <br />
-                    -Remaining a patreon member for 6 months - 100 bits
-                    <br />
-                    -Logging into the website for 7 consecutive days - 5 bits
-                    <br /> -Correcting a mistake - 1 bit
-                    <br /> -Referring a friend to patreon - 50 bits to you and
-                    your friend
-                    <br /> -Adding a new console to the base - 5 bits
-                    <br />
-                    -Wearing our merch and promoting us at a gaming event - 50
-                    bits
-                    <br /> -Earn the most points in a month win an additional -
-                    50 bits
-                    <br /> -Share anything brand-new, never-before-seen
-                    unreleased game-related - 500 bits
-                    <br /> -Share any brand new information from another source
-                    - 25 bits
-                    <br /> -Create a new article or forum post that gets picked
-                    up by another website or game source - 25 bits
-                    <br />
-                    Standard users can earn up to 25 points p/day Premium users
-                    can earn up to 75 points p/day
-                  </p>
+                <div class="space-y-6">
+                  <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                      <tr>
+                        <th scope="col" class="px-6 py-3">
+                          Action
+                        </th>
+                        <th scope="col" class="px-6 py-3">
+                          Reward
+                        </th>
+                        {/* <th scope="col" class="px-6 py-3">
+                          Category
+                        </th>
+                        <th scope="col" class="px-6 py-3">
+                          Price
+                        </th> */}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(bitAwards).map(([key, value]) => (
+                        <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                          <th
+                            scope="row"
+                            class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                          >
+                            {key}
+                          </th>
+                          <td class="px-6 py-4">{value}</td>
+                          {/* <td class="px-6 py-4">Laptop</td>
+                          <td class="px-6 py-4">$2999</td> */}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>

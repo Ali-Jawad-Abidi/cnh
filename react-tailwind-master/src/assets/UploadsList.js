@@ -72,36 +72,37 @@ function FullScreenImage(props) {
 }
 
 function EditUpload(props) {
-  var [showModal, setShowModal] = useState(false);
-  var [name, setName] = useState();
-  var [image, setImage] = useState();
-  var [imageChanged, setImageChanged] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [name, setName] = useState();
+  const [image, setImage] = useState();
+  const [imageChanged, setImageChanged] = useState(false);
+  const [reason, setReason] = useState();
 
   const [isFullScreen, setIsFullScreen] = useState(false);
 
-  function onSubmit(e) {
-    e.preventDefault();
+  // function onSubmit(e) {
+  //   e.preventDefault();
 
-    var subcategory = {};
-    if (imageChanged) {
-      subcategory.image = image;
-    }
-    if (name !== props.subcat.name) {
-      subcategory.name = name;
-    }
+  //   var subcategory = {};
+  //   if (imageChanged) {
+  //     subcategory.image = image;
+  //   }
+  //   if (name !== props.subcat.name) {
+  //     subcategory.name = name;
+  //   }
 
-    var config = {
-      method: "post",
-      url: process.env.REACT_APP_API_BASE_URL + "/editcategory",
-      data: { id: props.subcat._id, subcat: subcategory },
-    };
+  //   var config = {
+  //     method: "post",
+  //     url: process.env.REACT_APP_API_BASE_URL + "/editcategory",
+  //     data: { id: props.subcat._id, subcat: subcategory },
+  //   };
 
-    axios(config).then(function (response) {
-      if (response.status === 200) {
-        props.onUpdate(response.data);
-      }
-    });
-  }
+  //   axios(config).then(function (response) {
+  //     if (response.status === 200) {
+  //       props.onUpdate(response.data);
+  //     }
+  //   });
+  // }
   return (
     <>
       <button
@@ -194,7 +195,7 @@ function EditUpload(props) {
                         console.log(res);
                         if (res.status === 200) {
                           var result = confirm("Success!");
-                          props.onUpdate(props.upload);
+                          props.onRemove(props.upload);
                           setShowModal(false);
                         } else {
                           var result = confirm("Error Approving!!!");
@@ -220,31 +221,39 @@ function EditUpload(props) {
                     rows="4"
                     class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                     placeholder="Write your thoughts here..."
+                    onChange={(e) => {
+                      setReason(e.target.value);
+                    }}
                   ></textarea>
 
                   <button
                     onClick={() => {
-                      var result = confirm(
-                        "Are you sure you want to reject this entry?"
-                      );
-                      if (result) {
-                        setShowModal(false);
+                      if (reason.length === 0) {
+                        alert("Please specify a reason for rejection!");
+                      } else {
+                        var result = confirm(
+                          "Are you sure you want to reject this entry?"
+                        );
+                        if (result) {
+                          setShowModal(false);
 
-                        var config = {
-                          method: "get",
-                          url:
-                            process.env.REACT_APP_API_BASE_URL +
-                            "/removerequest",
-                          params: { id: props.upload._id },
-                        };
+                          var config = {
+                            method: "get",
+                            url:
+                              process.env.REACT_APP_API_BASE_URL +
+                              "/rejectRequest",
+                            params: { id: props.upload._id, reason: reason },
+                          };
 
-                        axios(config).then((response) => {
-                          if (response.status === 200) {
-                            alert("Success");
-                          } else {
-                            alert("Error Deleting");
-                          }
-                        });
+                          axios(config).then((response) => {
+                            if (response.status === 200) {
+                              props.onRemove(props.upload);
+                              alert("Success");
+                            } else {
+                              alert("Error Deleting");
+                            }
+                          });
+                        }
                       }
                     }}
                     className="bg-red-600 text-white px-2 py-2 rounded-lg hover:bg-red-700"
@@ -292,12 +301,20 @@ export default function UploadList(props) {
     fetchUploads();
   }, [showMore]);
 
-  function onUpdate(data) {
+  function onRemove(data) {
     setUploads(
       uploads.filter((u) => {
         return data._id !== u._id;
       })
     );
+  }
+  function onUpdate(data) {
+    var shallowCopy = uploads.map((u) => {
+      if (u._id === data._id) {
+        return data;
+      } else return u;
+    });
+    setUploads(shallowCopy);
   }
 
   var filteredUploads =
@@ -388,7 +405,11 @@ export default function UploadList(props) {
               </td>
 
               <td class="px-6 py-4">
-                <EditUpload upload={subcat} onUpdate={onUpdate} />
+                <EditUpload
+                  upload={subcat}
+                  onRemove={onRemove}
+                  onUpdate={onUpdate}
+                />
               </td>
               <td class="px-6 py-4">
                 <button
@@ -404,7 +425,6 @@ export default function UploadList(props) {
                     };
                     axios(config).then(function (response) {
                       if (response.status === 200) {
-                        console.log(response.data);
                         setUploads(
                           uploads.filter((u) => {
                             return subcat._id !== u._id;

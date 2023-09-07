@@ -97,7 +97,7 @@ export default function BitScheme(props) {
       <>
         <div className="mb-2">
           <p className="text-bold text-sm text-left dark:text-white">
-            According to current conversion rate, number of bits in 1 USD are{" "}
+            According to current conversion rate, number of bits in 1 £ are{" "}
             <span className="font-bold text-xl dark:text-white">
               {conversionRate}
             </span>

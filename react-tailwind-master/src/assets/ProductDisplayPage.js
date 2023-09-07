@@ -12,6 +12,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import Tooltip from "@mui/material/Tooltip";
 import Breadcrumb from "./BreadCrumb";
 import { useLocation } from "react-router-dom";
+import HtmlParser from "./HtmlParser";
 
 function Slider(props) {
   var images = props.con.images;
@@ -488,12 +489,12 @@ export default function ProductDisplayPage(props) {
             <Slider con={con} red={isred} setIsRed={setIsRed} />
             <div>
               <div className="dark:bg-gray-800 rounded-lg p-4 text-left">
-                <p className="font-bold whitespace-pre-wrap text-xl dark:text-white ">
+                {/* <p className="font-bold whitespace-pre-wrap text-xl dark:text-white ">
                   Description
-                </p>
-                <p className="text-sm dark:text-white whitespace-pre-wrap">
-                  {con.description}
-                </p>
+                </p> */}
+                {/* <p className="text-sm dark:text-white whitespace-pre-wrap"> */}
+                <HtmlParser htmlContent={con.description} />
+                {/* </p> */}
               </div>
               <div className="hidden mt-2 lg:block">
                 <CommentBox

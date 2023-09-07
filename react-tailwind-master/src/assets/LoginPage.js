@@ -8,15 +8,13 @@ import { Link } from "react-router-dom";
 import React from "react";
 
 function LoginPage() {
-  var [username, setUsername] = useState("");
-  var [password, setPassword] = useState("");
-  const [token, setToken] = useState("");
-  var [showPassword, setShowPassword] = useState(false);
-  var [error, setError] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
   const [secret, setSecret] = useState("");
-  const [isTwoFactorEnabled, setIsTwoFactorEnabled] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState("");
-  const [responseCred, setResponseCred] = useState(new Object());
+  const [verifySecret, setVerifySecret] = useState(false);
+  const [loginCredentials, setLoginCredentials] = useState({});
 
   function Submit(e) {
     e.preventDefault();
@@ -26,89 +24,66 @@ function LoginPage() {
       url: process.env.REACT_APP_API_BASE_URL + "/login",
       data: { username: username, password: password },
     };
-    axios(config).then(function (response) {
-      if (response.status === 200 && response.data.status) {
-        setResponseCred(response);
-        setToken(response.data.token);
-        setError("");
-        console.log(response);
-        if (response.data.twoFactorEnabled) {
-          setIsTwoFactorEnabled(response.data.twoFactorEnabled);
-          if (response.data.qrlCode) {
-            setQrCodeUrl(response.data.qrlCode);
-          }
+    axios(config)
+      .then(function (response) {
+        if (
+          response.status === 200 &&
+          response.data.status &&
+          response.data.accessToken &&
+          response.data.refreshToken
+        ) {
+          setError("");
+          setLoginCredentials(response.data);
+          setVerifySecret(true);
         } else {
-          localStorage.setItem("userid", JSON.stringify(response.data.id));
-          localStorage.setItem(
-            "username",
-            JSON.stringify(response.data.username)
-          );
-          localStorage.setItem(
-            "profileImage",
-            JSON.stringify(response.data.profileImage)
-          );
-          localStorage.setItem(
-            "authenticationtype",
-            JSON.stringify(response.data.authenticationtype)
-          );
-          localStorage.setItem("token", JSON.stringify(response.data.token));
-
-          localStorage.setItem("EmailVerify", JSON.stringify(true));
-
-          var location = JSON.parse(localStorage.getItem("redirectTo"));
-          localStorage.removeItem("redirectTo");
-          if (
-            responseCred.data.authenticationtype !== "Admin" &&
-            location === "/xGpAQhWobyTxIPx51LAKKOGnrWZNUtcOImuVUIPdqc="
-          ) {
-            window.location = "/";
-          } else {
-            if (location) {
-              window.location = location;
-            } else {
-              window.location = "/";
-            }
-          }
+          setError("Login Failed");
         }
-      } else {
-        setError(response.data.errorMessage);
-        console.log(response.data.errorMessage);
-      }
-    });
+      })
+      .catch((error) => {
+        setError(error.response.data.errorMessage);
+      });
   }
 
-  const handleVerifyToken = async () => {
-    try {
-      const response = await axios.post(
-        process.env.REACT_APP_API_BASE_URL + "/verify",
-        { username: username, token: secret }
-      );
-      console.log(response);
-      if (response.data.valid) {
-        localStorage.setItem("userid", JSON.stringify(responseCred.data.id));
+  function handleVerifyToken() {
+    var config = {
+      method: "post",
+      url: process.env.REACT_APP_API_BASE_URL + "/verify",
+      data: {
+        userid: loginCredentials.id,
+        token: secret,
+      },
+    };
+
+    axios(config).then((response) => {
+      if (response.status === 200 && response.data.valid) {
+        localStorage.setItem("userid", JSON.stringify(loginCredentials.id));
         localStorage.setItem(
           "username",
-          JSON.stringify(responseCred.data.username)
+          JSON.stringify(loginCredentials.username)
         );
 
-        if ("profileImage" in responseCred.data) {
+        if ("profileImage" in loginCredentials) {
           localStorage.setItem(
             "profileImage",
-            JSON.stringify(responseCred.data.profileImage)
+            JSON.stringify(loginCredentials.profileImage)
           );
         }
         localStorage.setItem(
           "authenticationtype",
-          JSON.stringify(responseCred.data.authenticationtype)
+          JSON.stringify(loginCredentials.authenticationtype)
         );
-        localStorage.setItem("token", JSON.stringify(responseCred.data.token));
-
-        localStorage.setItem("EmailVerify", JSON.stringify(true));
-
+        localStorage.setItem(
+          "token",
+          JSON.stringify(loginCredentials.accessToken)
+        );
+        localStorage.setItem(
+          "refreshToken",
+          JSON.stringify(loginCredentials.refreshToken)
+        );
         var location = JSON.parse(localStorage.getItem("redirectTo"));
         localStorage.removeItem("redirectTo");
         if (
-          responseCred.data.authenticationtype !== "Admin" &&
+          loginCredentials.authenticationtype !== "Admin" &&
           location === "/xGpAQhWobyTxIPx51LAKKOGnrWZNUtcOImuVUIPdqc="
         ) {
           window.location = "/";
@@ -120,33 +95,21 @@ function LoginPage() {
           }
         }
       } else {
-        console.error("Invalid 2FA token");
-        setError("Invalid 2FA Secret Key");
+        localStorage.clear();
+        setError("Invalid Key");
       }
-    } catch (error) {
-      console.error(
-        "Error verifying 2FA token:",
-        error.response?.data?.message || error.message
-      );
-    }
-  };
+    });
+  }
 
   return (
     <div>
-      {isTwoFactorEnabled && qrCodeUrl ? (
+      {verifySecret ? (
         <div>
-          <img
-            src={qrCodeUrl}
-            className="justify-center items-center mx-auto pt-4"
-            alt="QR Code"
-          />
-
           <label
             for="username"
             class="block text-left ml-auto mb-2 text-sm font-medium text-gray-900 dark:text-white mt-2"
           >
-            Scan the QR Code with google authenticator app on you phone and
-            enter the secret key below
+            Please enter the secretKey from your Google Authenticator below:
           </label>
           <input
             type="text"
@@ -165,6 +128,7 @@ function LoginPage() {
           >
             Verify
           </button>
+          <p className="text-center text-red-600 font-semibold">{error}</p>
         </div>
       ) : (
         <form

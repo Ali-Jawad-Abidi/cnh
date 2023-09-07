@@ -5,6 +5,31 @@ import { Link } from "react-router-dom";
 import { AddBrand } from "./BrandsList";
 import { useLocation } from "react-router-dom";
 
+export const MuseumItem = (props) => {
+  return (
+    <a
+      target="_blank"
+      href={props.item.link}
+      // style={{ textDecoration: "none", color: "white" }}
+    >
+      <div
+        onClick={() => {
+          localStorage.setItem("brand", JSON.stringify(props.brand._id));
+        }}
+        className="dark:bg-gray-700 rounded-lg shadow-lg flex flex-col gap-2 dark:text-white hover:scale-110 cursor-pointer bg-gray-200 my-2 p-2"
+      >
+        <img
+          src={props.item.image}
+          alt="brand image"
+          className="rounded-lg object-cover w-full lg:h-36 h-24"
+        />
+        <div className="dark:text-white text-sm text-center font-bold">
+          {props.item.name}
+        </div>
+      </div>
+    </a>
+  );
+};
 export function BrandItem(props) {
   return (
     <Link
@@ -93,39 +118,10 @@ export function ConsoleItem(props) {
   );
 }
 
-export const MuseumItem = (props) => {
-  return (
-    <a
-      target="_blank"
-      href={`${props.item.link}`}
-      style={{ textDecoration: "none", color: "white" }}
-    >
-      <div
-        onClick={() => {
-          localStorage.setItem("brand", JSON.stringify(props.brand._id));
-        }}
-        className="dark:bg-gray-700 rounded-lg shadow-lg flex flex-col gap-2 hover:scale-110 cursor-pointer bg-gray-200 my-2 p-2"
-      >
-        <img
-          src={props.item.image}
-          alt="brand image"
-          className="rounded-lg object-cover w-full h-36"
-        />
-        <div className="dark:text-white text-xs lg:text-sm text-center text-black font-bold">
-          {props.item.name}
-        </div>
-        <div className="text-sm line-clamp-3 text-center text-black dark:text-white hover:underline">
-          {props.item.info}
-        </div>
-      </div>
-    </a>
-  );
-};
-
 export function BrandsGrid(props) {
   return (
-    <div className="flex flex-col  min-w-full">
-      <div className="dark:bg-gray-800 dark:text-white shadow-xl rounded-lg p-4 m-2">
+    <div className="flex flex-col gap-2 min-w-full mb-2">
+      <div className="dark:bg-gray-800 dark:text-white shadow-xl rounded-lg p-4">
         <span className="font-bold float-left text-xl dark:text-white">
           Consoles
         </span>
@@ -141,7 +137,7 @@ export function BrandsGrid(props) {
           ))}
         </Grid>
       </div>
-      <div className="dark:bg-gray-800 dark:text-white shadow-xl rounded-lg p-4 m-2">
+      <div className="dark:bg-gray-800 dark:text-white shadow-xl rounded-lg p-4">
         <span className="font-bold float-left text-xl dark:text-white">
           Mobiles
         </span>
@@ -157,7 +153,7 @@ export function BrandsGrid(props) {
           ))}
         </Grid>
       </div>
-      <div className="dark:bg-gray-800 dark:text-white shadow-xl rounded-lg p-4 m-2">
+      <div className="dark:bg-gray-800 dark:text-white shadow-xl rounded-lg p-4">
         <span className="font-bold float-left text-xl dark:text-white">
           PCs
         </span>
@@ -306,7 +302,7 @@ export default function Hottopics(props) {
         <div className="flex flex-row justify-center gap-2">
           <div>
             <Link to={"/addconsole"} style={{ textDecoration: "none" }}>
-              <button className="bg-blue-600 rounded-lg text-white px-2 py-1">
+              <button className="bg-blue-600 hover:bg-blue-700 rounded-lg text-white px-2 py-1">
                 Add Console
               </button>
             </Link>

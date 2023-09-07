@@ -53,6 +53,12 @@ const BlogSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+
+  disableComments: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
 });
 
 const Blogs = mongoose.model("blogs", BlogSchema, "blogs");

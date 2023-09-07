@@ -1,8 +1,8 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import Loading from "./Loading";
-import ReactFileReader from "react-file-reader";
 import React from "react";
+import SingleImageUpload from "./SingleImageUpload";
 
 export default function MuseumsList(props) {
   var [search, setSearch] = useState("");
@@ -35,7 +35,7 @@ export default function MuseumsList(props) {
   var filteredMuseum =
     museums !== null
       ? museums.filter((museum) => {
-          return museum.name.includes(search);
+          return museum.name.toLowerCase().includes(search.toLowerCase());
         })
       : [];
 
@@ -81,9 +81,9 @@ export default function MuseumsList(props) {
             <th scope="col" class="px-6 py-3">
               Museum / Kiosk
             </th>
-            <th scope="col" class="px-6 py-3">
+            {/* <th scope="col" class="px-6 py-3">
               Info
-            </th>
+            </th> */}
             <th scope="col" class="px-6 py-3">
               Delete
             </th>
@@ -113,11 +113,11 @@ export default function MuseumsList(props) {
                 </div>
               </td>
 
-              <td class="px-6 py-4">
+              {/* <td class="px-6 py-4">
                 <p class="dark:text-white text-sm	text-clip overflow-hidden">
-                  {/* {museum.info.substring(0, 50) + "..."} */}
+                   {museum.info.substring(0, 50) + "..."} 
                 </p>
-              </td>
+              </td> */}
 
               <td class="px-6 py-4">
                 <button
@@ -161,10 +161,15 @@ function AddMuseum(props) {
   var [link, setLink] = useState("");
   var [showModal, setShowModal] = useState(false);
   var [ismuseum, setIsMuseum] = useState(false);
-  var [info, setInfo] = useState("");
+  // var [info, setInfo] = useState("");
 
   function Submit(e) {
     e.preventDefault();
+    if (image === "") {
+      alert("Please upload an image as well");
+      return;
+    }
+
     var config = {
       method: "post",
       url: process.env.REACT_APP_API_BASE_URL + "/addmuseum",
@@ -173,7 +178,6 @@ function AddMuseum(props) {
         image: image,
         link: link,
         ismuseum: ismuseum,
-        info: info,
       },
     };
     axios(config).then(function (response) {
@@ -231,56 +235,100 @@ function AddMuseum(props) {
 
               <form className="pb-4">
                 <div className="flex flex-col mx-4 gap-1">
-                  <div>
-                    <label
-                      for="email"
-                      class="block text-left ml-auto mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Museum Name
-                    </label>
-                    <input
-                      type="text"
-                      name="price"
-                      id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                      placeholder="Name"
-                      required
-                      maxlength="40"
-                      onChange={(e) => {
-                        setName(e.target.value);
-                      }}
-                    />
+                  <div className="flex flex-row items-start gap-2">
+                    <div>
+                      <label
+                        for="email"
+                        class="block text-left ml-auto mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        Museum Name
+                      </label>
+                      <input
+                        type="text"
+                        name="price"
+                        id="email"
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                        placeholder="Name"
+                        required
+                        maxlength="40"
+                        onChange={(e) => {
+                          setName(e.target.value);
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        for="email"
+                        class="block text-left ml-auto mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        Link to Museum Page
+                      </label>
+                      <input
+                        type="text"
+                        name="price"
+                        id="email"
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                        placeholder="Link"
+                        required
+                        maxlength="40"
+                        value={link}
+                        onChange={(e) => {
+                          setLink(e.target.value);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-row items-start gap-4 mt-2">
+                    <div className="flex flex-row items-start">
+                      <input
+                        id="museum"
+                        type="radio"
+                        name="type"
+                        value="museum"
+                        className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
+                        required
+                        onChange={() => {
+                          setIsMuseum(true);
+                        }}
+                      />
+                      <label
+                        for="museum"
+                        className="ml-2 mt-0 text-sm font-medium text-gray-900 dark:text-gray-300"
+                      >
+                        Museum
+                      </label>
+                    </div>
+
+                    <div className="flex flex-row items-start">
+                      <input
+                        id="kiosk"
+                        type="radio"
+                        name="type"
+                        value="kiosk"
+                        className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
+                        required
+                        onChange={() => {
+                          setIsMuseum(false);
+                        }}
+                      />
+                      <label
+                        for="kiosk"
+                        className="ml-2 mt-0 text-sm font-medium text-gray-900 dark:text-gray-300"
+                      >
+                        Kiosk
+                      </label>
+                    </div>
                   </div>
 
-                  <div>
-                    <label
-                      for="email"
-                      class="block text-left ml-auto mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Link to Museum Page
-                    </label>
-                    <input
-                      type="text"
-                      name="price"
-                      id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                      placeholder="Link"
-                      required
-                      maxlength="40"
-                      value={link}
-                      onChange={(e) => {
-                        setLink(e.target.value);
-                      }}
-                    />
-                  </div>
-                  <div>
+                  {/* <div>
                     <label
                       for="email"
                       class="block text-left ml-auto mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Museum Description
                     </label>
-                    <input
+                    <textarea
                       type="text"
                       name="price"
                       id="email"
@@ -293,58 +341,10 @@ function AddMuseum(props) {
                         setInfo(e.target.value);
                       }}
                     />
-                  </div>
-                  <div className="flex flex-row items-start">
-                    <input
-                      id="remember"
-                      type="checkbox"
-                      className="w-4 mt-2 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
-                      required
-                      onChange={(e) => {
-                        setIsMuseum(e.target.checked);
-                      }}
-                    />
+                  </div> */}
 
-                    <label
-                      for="remember"
-                      className="ml-2 mt-1 text-sm font-medium text-gray-900 dark:text-gray-300"
-                    >
-                      Is Museum / Is Kiosk
-                    </label>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    {image && (
-                      <>
-                        <label
-                          for="countries"
-                          class="block mb-2 text-left text-sm font-medium text-gray-900 dark:text-white"
-                        >
-                          Museum Image
-                        </label>
-                        <img
-                          src={image}
-                          alt="brand image"
-                          className="h-12 w-12 rounded-lg"
-                        />
-                      </>
-                    )}
-                    <ReactFileReader
-                      fileTypes={[".png", ".jpg", "jpeg"]}
-                      base64={true}
-                      multipleFiles={false}
-                      handleFiles={(files) => {
-                        setImage(files.base64);
-                      }}
-                      required
-                    >
-                      <button
-                        type="button"
-                        className="w-auto float-left mt-1 whitespace-nowrap mr-1 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                      >
-                        Upload Image
-                      </button>
-                    </ReactFileReader>
+                  <div className="flex flex-col gap-2 mt-2">
+                    <SingleImageUpload image={image} onImageChange={setImage} />
                   </div>
 
                   <div>

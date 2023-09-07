@@ -83,7 +83,8 @@ export default function ResetPassword() {
 
                   axios(config).then((response) => {
                     if (response.status === 200) {
-                      setResponse(response.msg);
+                      alert(response.msg);
+                      window.location = "/login";
                     } else {
                       setResponse(response.msg);
                     }

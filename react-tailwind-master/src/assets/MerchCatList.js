@@ -36,7 +36,7 @@ export default function MerchCatList(props) {
   var filteredCat =
     merchCats !== null
       ? merchCats.filter((product) => {
-          return product.name.toLowerCase().includes(search);
+          return product.name.toLowerCase().includes(search.toLowerCase());
         })
       : [];
 

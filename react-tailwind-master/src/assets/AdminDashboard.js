@@ -11,6 +11,7 @@ import moment from "moment";
 import Compressor from "compressorjs";
 import React from "react";
 import BitScheme from "./BitScheme";
+import RichTextEditor from "./TextArea";
 
 const OrdersList = lazy(() => import("./OrdersList.js"));
 const ProductList = lazy(() => import("./MerchList.js"));
@@ -23,13 +24,14 @@ const MerchCatList = lazy(() => import("./MerchCatList.js"));
 const UploadList = lazy(() => import("./UploadsList.js"));
 const SingleImageUpload = lazy(() => import("./SingleImageUpload"));
 
-function AddBlog(props) {
-  var [showModal, setShowModal] = useState(false);
-  var [title, setTitle] = useState("");
-  var [image, setImage] = useState("");
-  var [text, setText] = useState("");
-  var [info, setInfo] = useState("");
-  var [loading, setLoading] = useState(false);
+export function AddBlog(props) {
+  const [showModal, setShowModal] = useState(false);
+  const [title, setTitle] = useState("");
+  const [image, setImage] = useState("");
+  const [text, setText] = useState("");
+  const [info, setInfo] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [disableComments, setDisableComments] = useState(false);
 
   function onSubmit(e) {
     e.preventDefault();
@@ -42,6 +44,7 @@ function AddBlog(props) {
       addedby: JSON.parse(localStorage.getItem("userid")),
       info: info,
       thumbnail: image,
+      disableComments: disableComments,
     };
 
     var config = {
@@ -108,12 +111,29 @@ function AddBlog(props) {
                 <span class="sr-only">Close modal</span>
               </button>
               <div class="px-6 py-6 lg:px-8">
-                <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">
+                <h3 class="text-xl font-medium text-gray-900 dark:text-white">
                   Add Blog
                 </h3>
                 <form class="space-y-6" action="#">
                   <div className="mx-auto">
                     <SingleImageUpload image={image} onImageChange={setImage} />
+                  </div>
+                  <div class="flex items-center">
+                    <input
+                      id="default-checkbox"
+                      type="checkbox"
+                      checked={disableComments}
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      onChange={(e) => {
+                        setDisableComments(e.target.checked);
+                      }}
+                    />
+                    <label
+                      for="default-checkbox"
+                      class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                    >
+                      Disable Comments
+                    </label>
                   </div>
                   <div>
                     <input
@@ -139,13 +159,14 @@ function AddBlog(props) {
                     ></textarea>
                   </div>
                   <div>
-                    <textarea
+                    {/* <textarea
                       id="message"
                       rows="4"
                       class="bg-gray-90 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
                       placeholder="Description"
                       onChange={(e, v) => setText(e.target.value)}
-                    ></textarea>
+                    ></textarea> */}
+                    <RichTextEditor text={text} setText={setText} />
                   </div>
 
                   <button
@@ -173,6 +194,15 @@ function BlogList(props) {
   var [search, setSearch] = useState("");
   var [showMore, setShowMore] = useState(false);
 
+  function onUpdate(data) {
+    var shallowCopy = blogs.map((u) => {
+      if (u._id === data._id) {
+        return data;
+      } else return u;
+    });
+    setBlogs(shallowCopy);
+  }
+
   function fetchBlogs() {
     var config = {
       method: "get",
@@ -199,8 +229,8 @@ function BlogList(props) {
 
   var filteredBlogs = blogs.filter((blog) => {
     return (
-      blog.title.toLowerCase().includes(search) ||
-      blog.author.toLowerCase().includes(search)
+      blog.title.toLowerCase().includes(search.toLowerCase()) ||
+      blog.author.toLowerCase().includes(search.toLowerCase())
     );
   });
   return (
@@ -250,6 +280,9 @@ function BlogList(props) {
             </th>
             <th scope="col" class="px-6 py-3">
               Make Secondary
+            </th>
+            <th scope="col" class="px-6 py-3">
+              Edit Blog
             </th>
             <th scope="col" class="px-6 py-3">
               Delete
@@ -324,6 +357,9 @@ function BlogList(props) {
                 </button>
               </td>
               <td class="px-6 py-4">
+                <EditBlog blog={blog} onUpdate={onUpdate} />
+              </td>
+              <td class="px-6 py-4">
                 <button
                   onClick={() => {
                     setBlogs(
@@ -365,6 +401,168 @@ function BlogList(props) {
         </button>
       )}
     </div>
+  );
+}
+
+function EditBlog(props) {
+  const [showModal, setShowModal] = useState(false);
+  const [title, setTitle] = useState(props.blog.title);
+  const [image, setImage] = useState(props.blog.image);
+  const [text, setText] = useState(props.blog.text);
+  const [info, setInfo] = useState(props.blog.info);
+  const [loading, setLoading] = useState(false);
+  const [disableComments, setDisableComments] = useState(
+    props.blog.disableComments
+  );
+
+  function onSubmit(e) {
+    e.preventDefault();
+    var blog = {
+      id: props.blog._id,
+      author: props.blog.author,
+      text: text,
+      image: image,
+      title: title,
+      date: props.blog.date,
+      addedby: props.blog.addedby,
+      info: info,
+      thumbnail: image,
+      disableComments: disableComments,
+    };
+
+    var config = {
+      method: "post",
+      url: process.env.REACT_APP_API_BASE_URL + "/editblog",
+      data: blog,
+    };
+
+    axios(config).then(function (response) {
+      if (response.status === 200 && response.data.status) {
+        console.log("Blog Updated");
+        props.onUpdate(blog);
+      } else {
+        console.log(response.data.msg);
+      }
+    });
+  }
+
+  if (loading) return <Spinner />;
+  return (
+    <>
+      {/* // <!-- Modal toggle --> */}
+      <button
+        data-modal-target="authentication-modal"
+        data-modal-toggle="authentication-modal"
+        class="block mr-2 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+        type="button"
+        onClick={() => {
+          setShowModal(true);
+        }}
+      >
+        Edit Blog
+      </button>
+
+      {/* // <!-- Main modal --> */}
+      {showModal && (
+        <div
+          id="authentication-modal"
+          tabindex="-1"
+          class="flex fixed z-40 backdrop-blur-sm items-center justify-center w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] md:h-full"
+        >
+          <div class="relative w-full h-full max-w-md md:h-auto">
+            {/* <!-- Modal content --> */}
+            <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+              <button
+                type="button"
+                class="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-800 dark:hover:text-white"
+                data-modal-hide="authentication-modal"
+                onClick={() => setShowModal(false)}
+              >
+                <svg
+                  aria-hidden="true"
+                  class="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  ></path>
+                </svg>
+                <span class="sr-only">Close modal</span>
+              </button>
+              <div class="px-6 py-6 lg:px-8">
+                <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+                  Edit Blog
+                </h3>
+                <form class="space-y-6" action="#">
+                  <div className="mx-auto">
+                    <SingleImageUpload image={image} onImageChange={setImage} />
+                  </div>
+                  <div class="flex items-center">
+                    <input
+                      id="default-checkbox"
+                      type="checkbox"
+                      checked={disableComments}
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      onChange={(e) => {
+                        setDisableComments(e.target.checked);
+                      }}
+                    />
+                    <label
+                      for="default-checkbox"
+                      class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                    >
+                      Disable Comments
+                    </label>
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      name="email"
+                      id="email"
+                      class="bg-gray-90 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                      required
+                      value={title}
+                      onChange={(e, v) => {
+                        setTitle(e.target.value);
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <textarea
+                      id="message"
+                      rows="1"
+                      class="bg-gray-90 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                      placeholder="Small info that tells what the blogs is about, a headliner"
+                      onChange={(e, v) => setInfo(e.target.value)}
+                      value={info}
+                    ></textarea>
+                  </div>
+                  <div>
+                    <RichTextEditor text={text} setText={setText} />
+                  </div>
+
+                  <button
+                    type="submit"
+                    class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                    onClick={(e) => {
+                      onSubmit(e);
+                      setShowModal(false);
+                    }}
+                  >
+                    Submit
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -697,6 +895,7 @@ export default function AdminDashboard() {
   }, []);
 
   if (isAdmin === 2) {
+    localStorage.clear();
     window.location = "/";
     // return (
     //   <div className="dark:bg-gray-900">

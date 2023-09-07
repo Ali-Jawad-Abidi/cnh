@@ -16,6 +16,10 @@ const RequestSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  reason: {
+    type: String,
+    required: false,
+  },
   images: [
     {
       type: String,

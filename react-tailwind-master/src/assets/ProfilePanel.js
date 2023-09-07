@@ -34,7 +34,7 @@ export function ProfileDisplay(props) {
             onClick={() => {
               localStorage.setItem(
                 "redirectTo",
-                JSON.stringify(window.location.pathname)
+                JSON.stringify(window.location.href)
               );
             }}
           >

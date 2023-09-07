@@ -16,6 +16,7 @@ const aboutModel = require("./schemae/aboutSchema.js");
 const orderModel = require("./schemae/ordersSchema.js");
 const MerchCatModel = require("./schemae/MerchCatSchema.js");
 const RequestsModel = require("./schemae/userrequestsSchema.js");
+const cartModel = require("./schemae/cartSchema.js");
 var bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
 var jwt = require("jsonwebtoken");
@@ -34,7 +35,9 @@ const cron = require("node-cron");
 const crypto = require("crypto");
 const speakeasy = require("speakeasy");
 const qrcode = require("qrcode");
+const { promises } = require("dns");
 
+const JWT_SECRET = "shhhhhhhhhhhh1111";
 var conversionRate = 2;
 var bitsAward = {
   "Correcting a mistake": 1,
@@ -162,6 +165,41 @@ app.get("/api/uploads", (req, res) => {
       res.status(200).json({ uploads: sliced, isEnd: isEnd });
     }
   });
+});
+
+app.get("/api/bitlogs", (req, res) => {
+  RequestsModel.find(
+    {
+      // BitsStatus: { $ne: "Pending" },
+    },
+    (err, data) => {
+      if (err || data.length < 1) {
+        res.status(400).send("Error");
+      } else {
+        res.status(200).send(data);
+      }
+    }
+  );
+});
+
+app.post("/api/updateQuantity", async (req, res) => {
+  if (req.body.product && req.body.newQuantity && req.body.user) {
+    const merch = await merchModel.findOne(req.body.product);
+    if (!merch) {
+      return res.status(404).send("error");
+    }
+
+    var newOnTheSide = {
+      quantity: merch.quantity - req.body.newQuantity,
+      user: req.body.user,
+    };
+    merch.quantityOnTheSide.push(newOnTheSide);
+    merch.quantity = req.body.newQuantity;
+    merch.save();
+    return res.status(200).send(merch.quantity);
+  } else {
+    return res.status(400).send("Bad Request");
+  }
 });
 
 app.get("/api/getBitsAward", (req, res) => {
@@ -400,23 +438,36 @@ cron.schedule("0 12 * * *", async () => {
     console.error("Error running cron job:", error.message);
   }
 });
-
-app.get("/api/removerequest", (req, res) => {
-  const bitsAward = {
-    "Correcting a mistake": 1,
-    "Referring a friend to patreon": 50,
-    "Wearing cnh merch": 50,
-    "Shared something brand new": 500,
-    "Brand new information from another source": 25,
-    "New article gets picked up by another website": 25,
-  };
+app.get("/api/removerequest", async (req, res) => {
   if (req.query.id) {
+    try {
+      const data = await RequestsModel.find({ _id: req.query.id });
+      if (data.length < 1) {
+        console.log("Error: Data length < 1");
+        res.status(404).send("Not Found");
+      } else {
+        await data[0].deleteOne();
+        res.status(200).send("OK");
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      res.status(500).send("Internal Server Error");
+    }
+  } else {
+    res.status(400).send("Bad Request");
+  }
+});
+
+app.get("/api/rejectRequest", (req, res) => {
+  if (req.query.id && req.query.reason) {
     RequestsModel.find({ _id: req.query.id }, (err, data) => {
       if (err || data.length < 1) {
         console.log("Error: Data length < 1");
       } else {
         data[0].BitsStatus = "Rejected";
+        data[0].reason = req.query.reason;
         data[0].save();
+        res.status(200).send("ok");
       }
     });
   } else {
@@ -656,14 +707,15 @@ app.post("/api/resetPassword", (req, res) => {
 
 app.get("/api/resetPasswordRequest", (req, res) => {
   if (req.query.email) {
-    userModel.find({ username: req.query.email }, (err, data) => {
+    userModel.find({ email: req.query.email }, (err, data) => {
       if (err || data.length < 1) {
-        res.status(400).json({ msg: "Bad Request" });
+        console.log("Hello1");
+        res.status(201).json({ msg: "Bad Request" });
       } else if (data.length > 0) {
         var mailOptions = {
           from: "computernostalgiaheaven@gmail.com",
           to: data[0].email,
-          subject: "Password Reset",
+          subject: "Password Reset for " + data[0].username,
           text:
             "Click the below link to reset your password\nhttps://thecnh.co.uk/resetPassword/?_id=" +
             data[0]._id,
@@ -671,8 +723,9 @@ app.get("/api/resetPasswordRequest", (req, res) => {
 
         transporter.sendMail(mailOptions, function (error, info) {
           if (error) {
+            console.log("Hello3");
             console.log(error);
-            res.status(400).json({ msg: "Error Sending Email." });
+            res.status(201).json({ msg: "Error Sending Email." });
           } else {
             console.log("Email sent: " + info.response);
             res.status(200).json({
@@ -683,7 +736,8 @@ app.get("/api/resetPasswordRequest", (req, res) => {
       }
     });
   } else {
-    res.status(400).json({ msg: "Bad Request" });
+    console.log("Hello2");
+    res.status(201).json({ msg: "Bad Request" });
   }
 });
 
@@ -837,13 +891,16 @@ app.get("/api/getfaults", (req, res) => {
 
 app.post("/api/addmuseum", (req, res) => {
   var newmuseum = new museumModel(req.body);
+  console.log(newmuseum);
   newmuseum.save((err, data) => {
-    if (err) res.status(201).json({ msg: err });
-    else {
-      res.status(200).send(data);
+    if (err) {
+      res.status(500).json({ error: "Internal Server Error" });
+    } else {
+      res.status(200).json(data); // Respond with the newly created resource
     }
   });
 });
+
 app.get("/api/removemuseum", (req, res) => {
   if (req.query.id) {
     museumModel
@@ -1021,16 +1078,12 @@ app.post("/api/isadmin", (req, res) => {
       } else if (u.length > 0) {
         if (u[0].authenticationtype === "Admin") {
           // console.log(req.body.token);
-          tokenModel.find({ token: req.body.token }, (Err, data) => {
+          tokenModel.find({ accessToken: req.body.token }, (Err, data) => {
             if (Err) {
               console.log(Err);
               res.status(200).send(false);
             } else if (data.length > 0) {
-              if (data[0].authtype === "Admin") {
-                res.status(200).send(true);
-              } else {
-                res.status(200).send(false);
-              }
+              res.status(200).send(true);
             }
           });
         } else {
@@ -1046,14 +1099,16 @@ app.post("/api/isadmin", (req, res) => {
 });
 
 app.post("/api/editblog", (req, res) => {
-  if (req.body.ogtitle) {
+  if (req.body) {
     blogModel.findOneAndUpdate(
-      { title: req.body.ogtitle },
-      req.body.blog,
+      { _id: req.body.id },
+      req.body,
       (err, result) => {
         if (err) {
           res.status(200).json({ errMsg: err, status: false });
         } else {
+          console.log(result);
+          console.log(err);
           res.status(200).json({ errMsg: "", status: true });
         }
       }
@@ -1164,26 +1219,55 @@ app.get("/api/setSecondary", (req, res) => {
   }
 });
 
+// app.get("/api/showLatest", (req, res) => {
+//   consoleModel
+//     .find()
+//     .sort({ _id: 1 })
+//     .limit(30)
+//     .exec(function (err, data) {
+//       if (err) {
+//         res.status(400).send(err);
+//         console.log(err);
+//       } else if (data.length > 0) {
+//         var toSend = [];
+//         data.map((val, index) => {
+//           var value = { _id: val._id, images: [val.images[0]], name: val.name };
+//           toSend.push(value);
+//         });
+//         res.status(200).send(toSend);
+//       } else {
+//         res.status(200).send([]);
+//       }
+//     });
+// });
+
 app.get("/api/showLatest", (req, res) => {
-  consoleModel
-    .find()
-    .sort({ _id: 1 })
-    .limit(30)
-    .exec(function (err, data) {
-      if (err) {
-        res.status(400).send(err);
-        console.log(err);
-      } else if (data.length > 0) {
-        var toSend = [];
-        data.map((val, index) => {
-          var value = { _id: val._id, images: [val.images[0]], name: val.name };
-          toSend.push(value);
-        });
-        res.status(200).send(toSend);
-      } else {
-        res.status(200).send([]);
-      }
-    });
+  if (req.query.start && req.query.type) {
+    const startIndex = parseInt(req.query.start) || 0; // Get the startIndex from the query parameter or default to 0
+
+    consoleModel
+      .find({ type: req.query.type })
+      .sort({ _id: -1 })
+      .skip(startIndex)
+      .limit(30)
+      .exec(function (err, data) {
+        if (err) {
+          res.status(400).send(err);
+          console.log(err);
+        } else if (data.length > 0) {
+          const toSend = data.map((val) => ({
+            _id: val._id,
+            images: [val.images[0]],
+            name: val.name,
+          }));
+          res.status(200).send(toSend);
+        } else {
+          res.status(200).send([]);
+        }
+      });
+  } else {
+    return res.status(400).send("Bad Request");
+  }
 });
 
 app.get("/api/allusers", (req, res) => {
@@ -1279,75 +1363,6 @@ app.get("/api/getbrand", (req, res) => {
     });
   } else res.status(201).send("");
 });
-
-// //add a new console
-// app.post("/api/addconsole", (req, res) => {
-//   if (req.body) {
-//     let con = new consoleModel(req.body);
-//     subcatsModel.find({ _id: req.body.subcat }, (err, data) => {
-//       if (err) console.log(err);
-//       if (data.length > 0) {
-//         data[0].consoles.push(con._id);
-
-//         data[0].save((err, data) => {
-//           if (err) {
-//             res.status(400).json({
-//               errorMessage: err,
-//               status: false,
-//             });
-//           } else {
-//             userModel.find({ _id: req.body.addedby }, (err, data) => {
-//               if (err) {
-//                 res.status(400).json({
-//                   errorMessage: err,
-//                   status: false,
-//                 });
-//               } else if (data.length > 0) {
-//                 if (data[0].authenticationtype === "Admin") {
-//                   con.approved = true;
-//                 } else {
-//                   //-Adding a new console to the base - 5 bits
-//                   data[0].myconsoles.push(con._id);
-//                   if (
-//                     !data[0].isPremium
-//                       ? data[0].wallet.bits + 5 - data[0].wallet.prevbits <= 25
-//                       : data[0].wallet.bits + 5 - data[0].wallet.prevbits <= 50
-//                   ) {
-//                     data[0].wallet.bits = data[0].wallet.bits + 5;
-//                   }
-//                 }
-
-//                 data[0].save();
-
-//                 con.save((err, data) => {
-//                   if (err) {
-//                     res.status(400).json({
-//                       errorMessage: err,
-//                       status: "couldnt add console to user",
-//                     });
-//                     console.log(err);
-//                   } else {
-//                     res.status(200).json({
-//                       status: true,
-//                       msg: "console added successfully.",
-//                     });
-//                   }
-//                 });
-//               }
-//             });
-//           }
-//         });
-//       } else {
-//         res.status(400).json({
-//           errorMessage: "Brand not found please add brand first",
-//           status: false,
-//         });
-//       }
-//     });
-//   } else {
-//     res.status(400).send("Error in Request");
-//   }
-// });
 
 app.post("/api/addconsole", async (req, res) => {
   try {
@@ -1452,33 +1467,6 @@ app.post("/api/editconsole", (req, res) => {
     res.status(200).send("Success");
   });
 });
-
-// app.get("/api/removesubcat", (req, res) => {
-//   subcatsModel.find({ _id: req.query.id }, (err, ret) => {
-//     if (err || ret.length === 0)
-//       res.status(201).json({ status: false, msg: "Error finding subcat" });
-//     else {
-//       consoleModel
-//         .find({
-//           _id: {
-//             $in: ret[0].consoles,
-//           },
-//         })
-//         .deleteMany();
-//       brandModel.find({ _id: ret[0].brand }, (err, data) => {
-//         if (!err && data.length > 0) {
-//           data[0].variations = data[0].variations - 1;
-//           data[0].subcats.filter((subcat) => {
-//             subcat._id !== req.query.id;
-//           });
-//           data[0].save();
-//         }
-//       });
-//       ret[0].deleteOne();
-//       res.status(200).json({ status: true, msg: "" });
-//     }
-//   });
-// });
 
 app.get("/api/removesubcat", (req, res) => {
   subcatsModel.findOne({ _id: req.query.id }, (err, ret) => {
@@ -1592,43 +1580,6 @@ app.get("/api/removebrand", (req, res) => {
   });
 });
 
-// app.get("/api/removebrand", (req, res) => {
-//   if (req.query.id) {
-//     brandModel
-//       .find({ _id: req.query.id }, (err, ret) => {
-//         if (err || ret.length < 1)
-//           res.status(200).json({ status: false, msg: err });
-//         else if (ret.length > 0) {
-//           subcatsModel.find(
-//             {
-//               _id: {
-//                 $in: ret[0].subcats,
-//               },
-//             },
-//             (err, data) => {
-//               if (data.length > 0) {
-//                 data.map((d) => {
-//                   consoleModel
-//                     .find({
-//                       _id: {
-//                         $in: d.consoles,
-//                       },
-//                     })
-//                     .deleteMany();
-//                 });
-//               }
-//               data.deleteMany();
-//             }
-//           );
-//           res.status(200).json({ status: true, msg: "Success" });
-//         }
-//       })
-//       .deleteOne();
-//   } else {
-//     res.status(400).send("Error deleting brand");
-//   }
-// });
-
 app.post("/api/updatebrand", (req, res) => {
   if (req.body.id) {
     brandModel.findOneAndUpdate({ _id: req.body.id }, req.body, (err, data) => {
@@ -1664,31 +1615,33 @@ app.get("/api/isVerified", (req, res) => {
   });
 });
 
-app.get("/api/verify", (req, res) => {
-  if (req.query._id) {
-    userModel.find({ _id: req.query._id }, (err, data) => {
-      if (err) {
-        console.log(err);
-        res
-          .status(200)
-          .json({ status: false, msg: "Error: Error finding user" });
-      } else if (data.length > 0) {
-        tokenModel.find({ token: req.query.token }, (error, tok) => {
-          if (error) {
-            console.log(error);
-            res.status(200).json({ status: false, msg: error });
-          } else {
-            data[0].verified = true;
-            data[0].save();
-            res.status(200).send({ status: true, msg: "Verified" });
-          }
-        });
-      } else {
-        res.status(200).json({ status: false, msg: "User not found" });
-      }
-    });
-  } else {
-    res.status(200).json({ status: false, msg: "Bad Request" });
+app.get("/api/verify", async (req, res) => {
+  try {
+    const { _id, token } = req.query;
+
+    if (!_id || !token) {
+      return res.status(400).json({ status: false, msg: "Bad Request" });
+    }
+
+    const user = await userModel.findOne({ _id });
+
+    if (!user) {
+      return res.status(404).json({ status: false, msg: "User not found" });
+    }
+
+    const tokenRecord = await tokenModel.findOne({ userid: _id });
+
+    if (!tokenRecord) {
+      return res.status(404).json({ status: false, msg: "Token not found" });
+    }
+
+    user.verified = true;
+    await user.save();
+
+    res.status(200).json({ status: true, msg: "Verified" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ status: false, msg: "Internal Server Error" });
   }
 });
 
@@ -1824,27 +1777,6 @@ app.post("/api/removeconsole", async (req, res) => {
     res.status(500).send("Internal server error");
   }
 });
-
-// app.post("/api/removeconsole", (req, res) => {
-//   consoleModel.find({ _id: req.body.id }, (err, condata) => {
-//     if (err) {
-//       console.log(err);
-//       res.status(400).send(err);
-//     } else if (condata.length > 0) {
-//       subcatsModel.find({ _id: condata[0].subcat }, (err, data) => {
-//         if (data.length > 0) {
-//           data[0].consoles.filter((con) => {
-//             return con._id !== condata._id;
-//           });
-//         }
-//       });
-//       condata[0].deleteOne();
-//       res.status(200).send("success");
-//     } else {
-//       res.status(200).send("Console not found with the given id");
-//     }
-//   });
-// });
 
 app.get("/api/addlikedconsole", (req, res) => {
   if (req.query.con && req.query.user) {
@@ -2070,21 +2002,25 @@ app.post("/api/setConversionRate", (req, res) => {
 
 // return console based on req parameters
 app.get("/api/getallconsoles", (req, res) => {
-  if (req.query.start) {
-    consoleModel.find({ approved: true }, function (err, result) {
-      if (err) {
-        res.status(400).send("Error while retrieving consoles from database");
-      } else if (result.length > 0) {
-        var isEnd = result.length < req.query.start + 16 ? true : false;
-        var sliced = result.slice(
-          parseInt(req.query.start),
-          parseInt(req.query.start) + 16
-        );
-        res.status(200).json({ consoles: sliced, isEnd: isEnd });
-      } else {
-        res.status(200).json({ consoles: [], isEnd: true });
+  if (req.query.start && req.query.type) {
+    consoleModel.find(
+      { approved: true, type: req.query.type },
+      function (err, result) {
+        if (err) {
+          res.status(400).send("Error while retrieving consoles from database");
+        } else if (result.length > 0) {
+          var isEnd = result.length < req.query.start + 16 ? true : false;
+          var sliced = result.slice(
+            parseInt(req.query.start),
+            parseInt(req.query.start) + 16
+          );
+          console.log(sliced);
+          res.status(200).json({ consoles: sliced, isEnd: isEnd });
+        } else {
+          res.status(200).json({ consoles: [], isEnd: true });
+        }
       }
-    });
+    );
   } else {
     res.status(400).send("Error in request");
   }
@@ -2298,60 +2234,80 @@ app.get("/api/allsubcats", (req, res) => {
   });
 });
 
-app.post("/api/login", (req, res) => {
+app.post("/api/register", async (req, res) => {
   try {
-    // console.log(req.body);
-    if (req.body && req.body.username && req.body.password) {
-      userModel.find({ username: req.body.username }, (err, data) => {
-        if (data.length > 0) {
-          if (bcrypt.compareSync(req.body.password, data[0].password)) {
-            if (data[0].consecutive_logins >= 7) {
-              // User has logged in consecutively for 7 days
-              data[0].consecutive_logins = 0;
-              if (
-                !data[0].isPremium
-                  ? data[0].wallet.bits + 5 - data[0].wallet.prevbits <= 25
-                  : data[0].wallet.bits + 5 - data[0].wallet.prevbits <= 50
-              ) {
-                data[0].bits = data[0].bits + 5;
-              }
-              data[0].save();
-            } else {
-              const lastLogin = new Date(data[0].last_login);
-              const currentTime = new Date();
-              const timeDiff = Math.abs(currentTime - lastLogin);
-              const hoursDiff = Math.floor(timeDiff / (1000 * 60 * 60));
+    const { username, password, country, email } = req.body;
 
-              if (hoursDiff >= 24) {
-                // User has logged in after 24 hours, increment the consecutiveLogins field by 1
-                data[0].lastLogin = new Date();
-                data[0].consecutive_logins = data[0].consecutive_logins + 1;
-                data[0].save();
-              }
-            }
-            checkUserAndGenerateToken(data[0], req, res, false, true);
-          } else {
-            res.status(200).json({
-              errorMessage: "Username or password is incorrect!",
-              status: false,
-            });
-          }
-        } else {
-          res.status(200).json({
-            errorMessage: "Username or password is incorrect!",
-            status: false,
-          });
-        }
-      });
-    } else {
-      res.status(200).json({
-        errorMessage: "Add proper parameter first!",
+    if (!username || !password || !country || !email) {
+      return res.status(400).json({
+        errorMessage: "All fields are required!",
         status: false,
       });
     }
-  } catch (e) {
-    res.status(200).json({
-      errorMessage: "Something went wrong!",
+
+    const existingUser = await userModel.findOne({
+      $or: [{ email }, { username }],
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        errorMessage: "Username or email already exists!",
+        status: false,
+      });
+    }
+
+    // Hash the password before saving it
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    const newUser = new userModel({
+      username,
+      password: hashedPassword,
+      country,
+      email,
+    });
+
+    await newUser.save();
+
+    // Generate and send an access token after registration
+    HandleAuth(newUser, res, true);
+  } catch (error) {
+    console.error("Error during registration:", error);
+    console.log("e");
+
+    res.status(500).json({
+      errorMessage: "Internal server error",
+      status: false,
+    });
+  }
+});
+
+app.post("/api/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({
+        errorMessage: "Username and password are required!",
+        status: false,
+      });
+    }
+
+    const user = await userModel.findOne({ username });
+
+    if (!user || !bcrypt.compareSync(password, user.password)) {
+      return res.status(401).json({
+        errorMessage: "Username or password is incorrect!",
+        status: false,
+      });
+    }
+
+    // Generate and send an access token after registration
+    HandleAuth(user, res, false);
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).json({
+      errorMessage: "Internal server error",
       status: false,
     });
   }
@@ -2367,73 +2323,6 @@ app.post("/api/editorderstatus", (req, res) => {
       data[0].save();
     }
   });
-});
-
-/* register api */
-app.post("/api/register", (req, res) => {
-  try {
-    if (
-      req.body &&
-      req.body.username &&
-      req.body.password &&
-      req.body.country &&
-      req.body.email
-    ) {
-      userModel.find(
-        {
-          $or: [{ email: req.body.email }, { username: req.body.username }],
-        },
-        (err, data) => {
-          if (data.length === 0) {
-            var passwordHash = "";
-
-            bcrypt.hash(req.body.password, 10, function (err, hash) {
-              if (err) {
-                res.status(200).json({
-                  errorMessage: "Error Registering User",
-                  status: false,
-                });
-              } else {
-                let User = new userModel({
-                  username: req.body.username,
-                  password: hash,
-                  country: req.body.country,
-                  email: req.body.email,
-                });
-
-                User.save((err, data) => {
-                  if (err) {
-                    console.log(err);
-                    res.status(200).json({
-                      errorMessage: `UserName or Email Already Exists!`,
-                      status: false,
-                    });
-                  } else {
-                    checkUserAndGenerateToken(User, req, res, true, false);
-                  }
-                });
-              }
-            });
-          } else {
-            res.status(200).json({
-              errorMessage: `UserName or Email Already Exists!`,
-              status: false,
-            });
-          }
-        }
-      );
-    } else {
-      res.status(200).json({
-        errorMessage: "Add proper parameter first!",
-        status: false,
-      });
-    }
-  } catch (e) {
-    res.status(200).json({
-      errorMessage: "Something went wrong!",
-      status: false,
-    });
-  }
 });
 
 app.post("/api/updateUser", (req, res) => {
@@ -2549,281 +2438,168 @@ app.post("/api/updatebits", (req, res) => {
   });
 });
 
-// function checkUserAndGenerateToken(
-//   data,
-//   req,
-//   res,
-//   sendMail,
-//   twofactorauthentication
-// ) {
-//   const qrCodeOptions = {
-//     errorCorrectionLevel: "L", // Error correction level (L - low, M - medium, Q - quartile, H - high)
-//     type: "image/png", // Output QR code image format
-//     quality: 0.9, // Image quality (0.1 to 1)
-//     margin: 1, // QR code margin (number of modules)
-//   };
-//   jwt.sign(
-//     { user: data.username, id: data._id },
-//     "shhhhh11111",
-//     { expiresIn: "1d" },
-//     (err, token) => {
-//       if (err) {
-//         res.status(200).json({
-//           status: false,
-//           errorMessage: "Error Creating Token",
-//         });
-//       } else {
-//         let tok = new tokenModel({
-//           token: token,
-//           authtype: data.authenticationtype,
-//           userid: data._id,
-//         });
-//         tok.save((err, result) => {
-//           if (err) {
-//             console.log(err);
-//             res
-//               .status(200)
-//               .json({ status: false, errorMessage: "Error Saving Token" });
-//           } else {
-//             if (sendMail) {
-//               var mailOptions = {
-//                 from: "computernostalgiaheaven@gmail.com",
-//                 to: data.email,
-//                 subject: "Email Verification",
-//                 text:
-//                   "Click the below link to verify your email\nhttps://thecnh.co.uk/verify/?_id=" +
-//                   data._id +
-//                   "&token=" +
-//                   token,
-//               };
-
-//               transporter.sendMail(mailOptions, function (error, info) {
-//                 if (error) {
-//                   console.log(error);
-//                 } else {
-//                   console.log("Email sent: " + info.response);
-//                 }
-//               });
-//             }
-//             if (twofactorauthentication && data.twoFactorEnabled) {
-//               if (!data.twoFactorSetup) {
-//                 // Generate a secret key for the user
-//                 const secret = speakeasy.generateSecret();
-//                 data.twoFactorSecret = secret.base32; // Store the secret key in the user document
-//                 data.twoFactorEnabled = true;
-//                 data.otpauth_url = secret.otpauth_url;
-//                 data.twoFactorSetup = true;
-//                 data.save((err) => {
-//                   if (err) {
-//                     console.error("Error setting up 2FA:", err.message);
-//                     return res
-//                       .status(500)
-//                       .json({ message: "Internal server error" });
-//                   }
-
-//                   // Generate QR code URL to be used with 2FA authenticator apps (e.g., Google Authenticator)
-//                   qrcode.toDataURL(
-//                     secret.otpauth_url,
-//                     qrCodeOptions,
-//                     (err, codeString) => {
-//                       if (err) res.status(500).send("Internal Server Error");
-//                       if (!err)
-//                         res.status(200).json({
-//                           message: "Login Successfully.",
-//                           token: token,
-//                           status: true,
-//                           id: data.id,
-//                           username: data.username,
-//                           profileImage: data.image,
-//                           authenticationtype: data.authenticationtype,
-//                           twoFactorEnabled: data.twoFactorEnabled,
-//                           qrlCode: codeString,
-//                         });
-//                     }
-//                   );
-//                 });
-//               } else {
-//                 qrcode.toDataURL(
-//                   data.otpauth_url,
-//                   qrCodeOptions,
-//                   (err, codeString) => {
-//                     if (err) res.status(500).send("Internal Server Error");
-//                     if (!err)
-//                       res.status(200).json({
-//                         message: "Login Successfully.",
-//                         token: token,
-//                         status: true,
-//                         id: data.id,
-//                         username: data.username,
-//                         profileImage: data.image,
-//                         authenticationtype: data.authenticationtype,
-//                         twoFactorEnabled: data.twoFactorEnabled,
-//                         qrlCode: codeString,
-//                       });
-//                   }
-//                 );
-//               }
-//             } else {
-//               res.status(200).json({
-//                 message: "Login Successfully.",
-//                 token: token,
-//                 status: true,
-//                 id: data.id,
-//                 username: data.username,
-//                 profileImage: data.image,
-//                 authenticationtype: data.authenticationtype,
-//                 twoFactorEnabled: false,
-//               });
-//             }
-//           }
-//         });
-//       }
-//     }
-//   );
-// }
-
-function checkUserAndGenerateToken(
-  data,
-  req,
-  res,
-  sendMail,
-  twofactorauthentication
-) {
-  const qrCodeOptions = {
-    errorCorrectionLevel: "L",
-    type: "image/png",
-    quality: 0.9,
-    margin: 1,
+// Define a function to send an email
+async function sendEmail(data, accessToken, refreshToken) {
+  const mailOptions = {
+    from: "computernostalgiaheaven@gmail.com",
+    to: data.email,
+    subject: "Email Verification",
+    text: `Click the below link to verify your email\nhttp://localhost:3000/verify/?_id=${data._id}&accessToken=${accessToken}&refreshToken=${refreshToken}`,
   };
 
-  jwt.sign(
-    { user: data.username, id: data._id },
-    "shhhhh11111",
-    { expiresIn: "20m" },
-    (err, token) => {
-      if (err) {
-        res.status(200).json({
-          status: false,
-          errorMessage: "Error Creating Token",
-        });
-      } else {
-        let tok = new tokenModel({
-          token: token,
-          authtype: data.authenticationtype,
-          userid: data._id,
-        });
-
-        tok.save((err, result) => {
-          if (err) {
-            console.log(err);
-            res
-              .status(200)
-              .json({ status: false, errorMessage: "Error Saving Token" });
-          } else {
-            if (sendMail) {
-              var mailOptions = {
-                from: "computernostalgiaheaven@gmail.com",
-                to: data.email,
-                subject: "Email Verification",
-                text:
-                  "Click the below link to verify your email\nhttps://thecnh.co.uk/verify/?_id=" +
-                  data._id +
-                  "&token=" +
-                  token,
-              };
-
-              transporter.sendMail(mailOptions, function (error, info) {
-                if (error) {
-                  console.log(error);
-                } else {
-                  console.log("Email sent: " + info.response);
-                }
-              });
-            }
-            if (twofactorauthentication && data.twoFactorEnabled) {
-              if (!data.twoFactorSetup) {
-                const secret = speakeasy.generateSecret();
-                data.twoFactorSecret = secret.base32;
-                data.twoFactorEnabled = true;
-                data.otpauth_url = secret.otpauth_url;
-                data.twoFactorSetup = true;
-                data.save((err) => {
-                  if (err) {
-                    console.error("Error setting up 2FA:", err.message);
-                    return res
-                      .status(500)
-                      .json({ message: "Internal server error" });
-                  }
-
-                  qrcode.toDataURL(
-                    data.otpauth_url,
-                    qrCodeOptions,
-                    (err, codeString) => {
-                      if (err) res.status(500).send("Internal Server Error");
-                      if (!err)
-                        res.status(200).json({
-                          message: "Login Successfully.",
-                          token: token,
-                          status: true,
-                          id: data.id,
-                          username: data.username,
-                          profileImage: data.image,
-                          authenticationtype: data.authenticationtype,
-                          twoFactorEnabled: data.twoFactorEnabled,
-                          qrlCode: codeString,
-                        });
-                    }
-                  );
-                });
-              } else {
-                qrcode.toDataURL(
-                  data.otpauth_url,
-                  qrCodeOptions,
-                  (err, codeString) => {
-                    if (err) res.status(500).send("Internal Server Error");
-                    if (!err)
-                      res.status(200).json({
-                        message: "Login Successfully.",
-                        token: token,
-                        status: true,
-                        id: data.id,
-                        username: data.username,
-                        profileImage: data.image,
-                        authenticationtype: data.authenticationtype,
-                        twoFactorEnabled: data.twoFactorEnabled,
-                        qrlCode: codeString,
-                      });
-                  }
-                );
-              }
-            } else {
-              res.status(200).json({
-                message: "Login Successfully.",
-                token: token,
-                status: true,
-                id: data.id,
-                username: data.username,
-                profileImage: data.image,
-                authenticationtype: data.authenticationtype,
-                twoFactorEnabled: false,
-              });
-            }
-          }
-        });
-      }
-    }
-  );
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent: " + info.response);
+  } catch (error) {
+    console.error("Error sending email:", error);
+  }
 }
+
+// Define a function to set up two-factor authentication
+async function setupTwoFactorAuthentication(data) {
+  const secret = speakeasy.generateSecret();
+  data.twoFactorSecret = secret.base32;
+  data.twoFactorEnabled = true;
+  data.otpauth_url = secret.otpauth_url;
+  data.twoFactorSetup = true; //not required
+  try {
+    await data.save();
+  } catch (err) {
+    console.error("Error setting up 2FA:", err.message);
+    throw new Error("Internal server error");
+  }
+}
+
+// Define a function to generate a QR code
+async function generateQRCode(data, qrCodeOptions) {
+  return new Promise((resolve, reject) => {
+    qrcode.toDataURL(data.otpauth_url, qrCodeOptions, (err, codeString) => {
+      if (err) reject(err);
+      else resolve(codeString);
+    });
+  });
+}
+function generateTokens(user) {
+  const accessToken = jwt.sign({ userId: user._id }, JWT_SECRET, {
+    expiresIn: "30m",
+  });
+
+  const refreshToken = jwt.sign({ userId: user._id }, JWT_SECRET, {
+    expiresIn: "7d",
+  });
+
+  return { accessToken, refreshToken };
+}
+
+async function HandleAuth(data, res, isSignUp) {
+  try {
+    // Generate both access and refresh tokens using the generateTokens function
+    const { accessToken, refreshToken } = generateTokens(data);
+
+    // Save the tokens in the database
+    const token = new tokenModel({
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      authtype: data.authenticationtype,
+      userid: data._id,
+    });
+
+    token.save();
+
+    const qrCodeOptions = {
+      errorCorrectionLevel: "L", // Error correction level (L - low, M - medium, Q - quartile, H - high)
+      type: "image/png", // Output QR code image format
+      quality: 0.9, // Image quality (0.1 to 1)
+      margin: 1, // QR code margin (number of modules)
+    };
+
+    // Send email if required
+    if (isSignUp) {
+      sendEmail(data, accessToken, refreshToken);
+
+      await setupTwoFactorAuthentication(data);
+      // Generate QR code
+      const codeString = await generateQRCode(data, qrCodeOptions);
+
+      res.status(200).json({
+        message: "Sign In Successful.",
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        status: true,
+        id: data.id,
+        username: data.username,
+        profileImage: data.image,
+        authenticationtype: data.authenticationtype,
+        twoFactorEnabled: data.twoFactorEnabled,
+        qrlCode: codeString,
+      });
+    } else {
+      const codeString = await generateQRCode(data, qrCodeOptions);
+      console.log(codeString);
+      res.status(200).json({
+        message: "Login Successful.",
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        status: true,
+        id: data.id,
+        username: data.username,
+        profileImage: data.image,
+        authenticationtype: data.authenticationtype,
+        twoFactorEnabled: true,
+        // qrlCode: codeString,
+      });
+    }
+  } catch (error) {
+    console.error("Error in HandleAuth:", error);
+    res.status(500).json({
+      errorMessage: "Internal server error",
+    });
+  }
+}
+
+app.post("/api/refresh", async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ message: "Refresh token is required" });
+  }
+
+  try {
+    // Verify the refresh token against your database
+    const existingToken = await Token.findOne({ refreshToken });
+
+    if (!existingToken) {
+      return res.status(401).json({ message: "Invalid refresh token" });
+    }
+
+    // If the refresh token is valid, generate a new access token
+    const newAccessToken = jwt.sign(
+      { userId: existingToken.userId },
+      ACCESS_TOKEN_SECRET,
+      { expiresIn: "20m" } // Set the expiration time for the new access token
+    );
+
+    return res.status(200).json({ accessToken: newAccessToken });
+  } catch (error) {
+    console.error("Error refreshing token:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 // API endpoint for verifying 2FA token
 app.post("/api/verify", async (req, res) => {
-  const { username, token } = req.body;
+  const { userid, token } = req.body;
+  console.log(userid, token);
 
   try {
-    const user = await userModel.findOne({ username });
+    const user = await userModel.findOne({ _id: userid });
 
     if (!user || !user.twoFactorEnabled) {
       res.status(401).json({ message: "2FA is not enabled for this user" });
+    }
+    if (user.authenticationtype === "Admin") {
+      res.status(200).json({ valid: true });
+      return;
     }
 
     // Verify the token using the secret key stored in the user document
@@ -2834,16 +2610,38 @@ app.post("/api/verify", async (req, res) => {
       window: 1, // Allow tokens to be valid for a short time before and after the current time
     });
 
-    res.json({ valid: verified });
+    res.status(200).json({ valid: verified });
   } catch (error) {
     console.error("Error verifying 2FA token:", error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 });
 
-app.get("/api/logout", (req, res) => {
-  if (req.query.token) {
-    tokenModel.deleteOne({ token: req.query.token }, (err, result) => {
+app.post("/api/getCartLength", async (req, res) => {
+  const { cartId } = req.body;
+  if (!cartId || cartId.length < 1) {
+    return res.status(400).send("Bad Request");
+  }
+
+  const cart = await cartModel.findById(cartId);
+  if (!cart) {
+    return res.status(404).send("Not Found");
+  }
+  const expiryTime = new Date(Date.now() + 30 * 60 * 1000);
+  cart.expiryTime = expiryTime;
+  await cart.save();
+  if (!cart) {
+    res.status(404).send("Not Found");
+  }
+
+  res.status(200).send(JSON.stringify(cart.items.length));
+});
+
+app.get("/api/logout", async (req, res) => {
+  if (req.query.accessToken && req.query.id) {
+    const cart = await cartModel.deleteOne({ user: req.query.id });
+
+    tokenModel.deleteOne({ accessToken: req.query.token }, (err, result) => {
       if (err) {
         res.status(400).send("Error Deleting Token");
       } else {
@@ -3226,6 +3024,36 @@ app.get("/api/blog", (req, res) => {
   }
 });
 
+app.post("/api/deleteComment", async (req, res) => {
+  if (req.body.postId && req.body.commentId && req.body.postType) {
+    const postId = req.body.postId;
+    const commentId = req.body.commentId;
+
+    if (req.body.postType === "console") {
+      const con = await consoleModel.findById(postId);
+      if (con) {
+        con.comments = con.comments.filter((comnt) => {
+          return comnt.toString() !== commentId.toString();
+        });
+        con.save();
+      }
+    } else if (req.body.postType === "blog") {
+      const blg = await blogModel.findById(postId);
+      console.log(blg.comments);
+      if (blg) {
+        blg.comments = blg.comments.filter((comnt) => {
+          return comnt.toString() !== commentId.toString();
+        });
+        blg.save();
+      }
+    }
+    commentModel.findById(commentId).deleteOne();
+    res.status(200).send("Success");
+  } else {
+    res.status(400).send("Invalid parameters");
+  }
+});
+
 //add blog to database
 app.post("/api/addblog", (req, res) => {
   let blg = new blogModel(req.body);
@@ -3308,7 +3136,7 @@ app.post("/api/getmerch", (req, res) => {
       }
     });
   } else {
-    merchModel.find({}, (err, data) => {
+    merchModel.find({ quantity: { $gt: 0 } }, (err, data) => {
       if (err) {
         console.log(err);
         res.status(404).json({ msg: err, items: [] });
@@ -3328,6 +3156,7 @@ app.post("/api/getmerch", (req, res) => {
             description: val.description,
             quantity: val.quantity,
             bits: val.bits,
+            bitsLimit: val.bitsLimit,
           };
           toSend.push(value);
         });
@@ -3658,8 +3487,10 @@ app.post("/api/editmerch", (req, res) => {
     { new: true },
     (err, result) => {
       if (err) {
-        res.status(200).json({ result: err, status: false });
+        // Use an appropriate error status code, such as 400 or 500
+        res.status(500).json({ result: err, status: false });
       } else {
+        // Use 200 for a successful response
         res.status(200).json({ result: result, status: true });
       }
     }
@@ -3730,6 +3561,261 @@ app.post("/api/deletemerch", (req, res) => {
 //     res.status(400).send("Bad Request");
 //   }
 // });
+
+app.post("/api/cartExists", async (req, res) => {
+  if (req.body.id) {
+    const cart = await cartModel.findById(req.body.id);
+    if (!cart) {
+      return res.status(404).send("Cart not found");
+    }
+    return res.status(200).send("success");
+  } else {
+    return res.status(400).send("Bad Request");
+  }
+});
+
+app.post("/api/removeCart", async (req, res) => {
+  const { cartId, indexToRemove } = req.body;
+
+  if (!cartId || indexToRemove === undefined || indexToRemove === null) {
+    return res.status(400).send("Bad Request");
+  }
+  const cart = await cartModel.findById(cartId);
+  if (!cart) {
+    return res.status(404).send("Cart not found");
+  }
+  cart.items = await Promise.all(
+    cart.items.filter((_, index) => index !== indexToRemove)
+  );
+  await cart.save();
+  res.status(200).send("ok");
+});
+
+function calculatePrice(product, bitsSpent) {
+  var price = 0;
+  price = product.price - product.discount * (product.price / 100);
+  if (bitsSpent) {
+    price = price - product.bitsLimit / conversionRate;
+  }
+
+  return price;
+}
+
+// API to get a cart by ID
+app.post("/api/getCart", async (req, res) => {
+  try {
+    const cartId = req.body.id;
+
+    if (!cartId) {
+      return res.status(400).json({ error: "Bad Request" });
+    }
+
+    const cart = await cartModel.findById(cartId);
+
+    if (!cart) {
+      return res.status(404).json({ error: "Cart not found" });
+    }
+
+    const toSend = [];
+    const expiryTime = new Date(Date.now() + 30 * 60 * 1000);
+
+    for (const item of cart.items) {
+      const product = await merchModel.findById(item.id);
+
+      if (product) {
+        const newitem = {
+          id: item.id,
+          img: product.thumbnail,
+          price: calculatePrice(product, item.bitsSpent),
+          title: product.title,
+          color: product.color,
+          quantity: 1,
+        };
+
+        toSend.push(newitem);
+      }
+    }
+
+    const total = toSend.reduce((sum, item) => sum + item.price, 0);
+
+    cart.expiryTime = expiryTime;
+    await cart.save();
+
+    res.status(200).json({ cart: toSend, total: total.toFixed(2) });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// app.post("/api/getCart", async (req, res) => {
+//   console.log(req.body);
+//   if (req.body.id) {
+//     const cart = await cartModel.findById(req.body.id);
+//     if (!cart) {
+//       return res.status(404).send("Cart not found");
+//     }
+//     var toSend = [];
+//     const expiryTime = new Date(Date.now() + 30 * 60 * 1000);
+//     cart.expiryTime = expiryTime;
+//     await cart.save();
+//     let total = 0;
+//     for (const item of cart.items) {
+//       const product = await merchModel.findById(item.id);
+//       if (product) {
+//         var newitem = {};
+//         var price = 0;
+//         newitem.id = item.id;
+//         newitem.img = product.thumbnail;
+//         price = product.price - product.discount * (product.price / 100);
+//         if (item.bitsSpent) {
+//           price = price - product.bitsLimit / conversionRate;
+//         }
+//         newitem.price = price;
+//         total = total + price;
+//         newitem.title = product.title;
+//         newitem.color = product.color;
+//         newitem.quantity = 1;
+//         toSend.push(newitem);
+//       }
+//     }
+//     res.status(200).json({ cart: toSend, total: total });
+//   } else {
+//     return res.status(400).send("Bad Request");
+//   }
+// });
+
+app.post("/api/addCart", async (req, res) => {
+  console.log(req.body);
+  if (!req.body.user || !req.body.cart) {
+    return res.status(400).send("Bad Request");
+  }
+  if (req.body.cartId && req.body.cartId.length > 1) {
+    const order = await cartModel.findById(req.body.cartId);
+    if (!order) {
+      return res.status(400).send("Bad Request");
+    }
+
+    for (const item of req.body.cart) {
+      const product = await merchModel.findOne({ _id: item.id });
+      var price = 0;
+
+      if (product) {
+        price = product.price - product.discount * (product.price / 100);
+        if (item.bitsSpent) {
+          price = price - product.bitsLimit / conversionRate;
+        }
+        order.items.push(item);
+        product.quantity = product.quantity - 1;
+        await product.save();
+        order.total = order.total + price.toFixed(2);
+      }
+    }
+    const expiryTime = new Date(Date.now() + 30 * 60 * 1000);
+    order.expiryTime = expiryTime;
+    await order.save();
+    return res.status(200).json({ cartId: undefined });
+  } else {
+    const expiryTime = new Date(Date.now() + 30 * 60 * 1000);
+
+    var items = [];
+    var total = 0;
+    for (const item of req.body.cart) {
+      const product = await merchModel.findOne({ _id: item.id });
+      var price = 0;
+
+      if (product) {
+        price = product.price - product.discount * (product.price / 100);
+        if (item.bitsSpent) {
+          price = price - product.bitsLimit / conversionRate;
+        }
+        items.push(item);
+        product.quantity = product.quantity - 1;
+        await product.save();
+        total = total + price.toFixed(2);
+      }
+    }
+    var newOrder = new cartModel({
+      user: req.body.user,
+      items: items,
+      expiryTime: expiryTime,
+      total: total,
+    });
+    await newOrder.save();
+    return res.status(200).json({ cartId: newOrder._id });
+  }
+});
+
+// Define a cron job to run every hour (adjust the schedule as needed)
+cron.schedule("*/10 * * * *", async () => {
+  try {
+    const currentTime = new Date();
+
+    // Find and remove expired carts
+    const cartsToDelete = await cartModel.find({
+      expiresAt: { $lt: currentTime },
+    });
+
+    for (const cart of cartsToDelete) {
+      for (const item of cart.items) {
+        const product = await merchModel.findOne({ _id: item.id });
+        if (product) {
+          product.quantity = product.quantity + 1;
+          await product.save();
+        }
+        if (item.bitsSpent) {
+          const user = await userModel.findOne({ _id: cart.user });
+          user.wallet.bits = user.wallet.bits + product.bitsLimit;
+          await user.save();
+        }
+      }
+    }
+
+    // Delete the carts after processing
+    await cartModel.deleteMany({
+      _id: { $in: cartsToDelete.map((cart) => cart._id) },
+    });
+
+    console.log("Expired carts removed successfully.");
+  } catch (error) {
+    console.error("Error removing expired carts:", error);
+  }
+});
+
+app.post("/api/deleteCart", async (req, res) => {
+  const { cartId } = req.body;
+  if (!cartId || cartId.length < 1) {
+    return res.status(400).send("Bad Request");
+  }
+
+  await cartModel.findByIdAndDelete(cartId);
+  return res.status(200).send("ok");
+});
+
+app.post("/api/getCartTotal", async (req, res) => {
+  const { cartId } = req.body;
+  if (!cartId || cartId.length < 1) {
+    return res.status(400).send("Bad Request");
+  }
+  const cart = await cartModel.findById(cartId);
+  const expiryTime = new Date(Date.now() + 30 * 60 * 1000);
+  cart.expiryTime = expiryTime;
+  await cart.save();
+  let total = 0;
+  let data = await Promise.all(
+    cart.items.map(async (item, index) => {
+      const product = await merchModel.findById(item.id);
+      let price = product.price - product.discount * (product.price / 100);
+      if (item.bitsSpent) {
+        price = price - product.bitsLimit / conversionRate;
+      }
+
+      total = total + price;
+    })
+  );
+
+  res.status(200).json({ total: total });
+});
 
 app.post("/api/neworder", async (req, res) => {
   try {

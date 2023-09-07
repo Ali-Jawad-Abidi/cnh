@@ -39,32 +39,39 @@ export default function Museums(props) {
   return (
     <div className="dark:bg-gray-900">
       <Header />
-      <div className="mx-4 flex flex-col gap-2 mt-4 min-h-screen mb-4">
-        <div className="shadow-lg p-4 rounded-lg dark:bg-gray-800 dark:text-white mx-4">
-          <p className="text-2xl font-bold dark:text-white text-left">
-            Museums
-          </p>
-          <Grid container spacing={1}>
-            {museums.map((mus, index) => (
-              <Grid item xs={12} md={4} sm={12} key={index}>
-                <MuseumItem item={mus} />
+      <Grid container>
+        <Grid item xs={1} md={1} sm={1}></Grid>
+        <Grid item xs={10} sm={10} md={10}>
+          <div className="mx-4 flex flex-col gap-2 mt-4 min-h-screen mb-4">
+            <div className="shadow-lg p-4 rounded-lg dark:bg-gray-800 dark:text-white mx-4">
+              <p className="text-2xl font-bold dark:text-white text-left">
+                Museums
+              </p>
+              <Grid container spacing={1}>
+                {museums.map((mus, index) => (
+                  <Grid item xs={12} md={4} sm={12} key={index}>
+                    <MuseumItem item={mus} />
+                  </Grid>
+                ))}
               </Grid>
-            ))}
-          </Grid>
-        </div>
+            </div>
 
-        <div className="shadow-lg p-4 rounded-lg dark:bg-gray-800 dark:text-white mx-4">
-          <p className="text-2xl font-bold dark:text-white text-left">Kiosks</p>
+            <div className="shadow-lg p-4 rounded-lg dark:bg-gray-800 dark:text-white mx-4">
+              <p className="text-2xl font-bold dark:text-white text-left">
+                Kiosks
+              </p>
 
-          <Grid container spacing={1}>
-            {kiosks.map((mus, index) => (
-              <Grid item xs={12} md={4} sm={12} key={index}>
-                <MuseumItem item={mus} />
+              <Grid container spacing={1}>
+                {kiosks.map((mus, index) => (
+                  <Grid item xs={12} md={4} sm={12} key={index}>
+                    <MuseumItem item={mus} />
+                  </Grid>
+                ))}
               </Grid>
-            ))}
-          </Grid>
-        </div>
-      </div>
+            </div>
+          </div>
+        </Grid>
+      </Grid>
       <Footer />
     </div>
   );

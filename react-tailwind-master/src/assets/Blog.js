@@ -4,6 +4,7 @@ import Footer from "./Footer";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import Header from "./Header";
+// import { AddBlog } from "./AdminDashboard";
 import Loading from "./Loading";
 
 export function BlogItem(props) {
@@ -57,7 +58,8 @@ export function BlogItem(props) {
 export function BlogsGrid(props) {
   var blogs = props.blogs;
   return (
-    <div className="mx-3 p-2 min-h-screen border-2 mb-4 rounded-lg">
+    <div className="mx-3 p-2 min-h-screen mb-4 rounded-lg">
+      {/* border-2 */}
       <Grid container columnSpacing={2} rowSpacing={2}>
         {blogs.map((blog) => (
           <Grid item xs={6} sm={6} md={3}>
@@ -95,9 +97,22 @@ export default function Blog() {
   return (
     <div className="dark:bg-gray-900">
       <Header />
-      <p className="text-4xl dark:text-emerald-400 p-2">Blogs and Articles</p>
+      <div className="flex flex-row justify-between mr-4">
+        <p></p>
+        <p className="text-4xl dark:text-emerald-400 p-2">
+          BLOGS & <span className="font-bold">ARTICLES</span>
+        </p>
+        {/* <AddBlog /> */}
+        <p></p>
+      </div>
       <div className="min-h-screen">
-        <BlogsGrid blogs={blogs} />
+        <Grid container>
+          <Grid item xs={1} md={1} sm={1}></Grid>
+          <Grid item xs={10} md={10} sm={10}>
+            <BlogsGrid blogs={blogs} />
+          </Grid>
+        </Grid>
+
         {showMore && (
           <div className="flex pt-3 pb-3 justify-center w-full">
             <div

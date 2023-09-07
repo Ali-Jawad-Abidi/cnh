@@ -78,9 +78,9 @@ export default function ForgotPassword() {
 
                   axios(config).then((response) => {
                     if (response.status === 200) {
-                      setResponse(response.data.msg);
-                      console.log(response.data.msg);
+                      alert(response.data.msg);
                       setDisabled(true);
+                      window.location = "/";
                     } else {
                       console.log(response.data);
                       setResponse(response.data);

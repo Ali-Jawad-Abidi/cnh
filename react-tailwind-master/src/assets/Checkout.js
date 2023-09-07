@@ -62,7 +62,7 @@ function OrderComplete(props) {
                             {item.quantity}
                           </span>
                           <p className="text-lg font-bold dark:text-white">
-                            $
+                            £
                             {(item.price.toFixed(2) - item.discount / 100) *
                               item.quantity}
                           </p>
@@ -129,67 +129,78 @@ export default function Checkout(props) {
   const [success, setSuccess] = useState(false);
   const [ErrorMessage, setErrorMessage] = useState("");
   const [orderID, setOrderID] = useState(0);
-  var [total, setTotal] = useState(0);
-  const [deliveryCost, setDeliveryCost] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [deliveryCost, setDeliveryCost] = useState(15);
+  const [toPay, setToPay] = useState(0);
   const [subtotal, setSubTotal] = useState(0);
   const [totalBitsSpent, setTotalBitsSpent] = useState(0);
-  var [cartItems, setCartItems] = useState(
+  const [cartItems, setCartItems] = useState(
     "cart" in localStorage ? JSON.parse(localStorage.getItem("cart")) : []
   );
-  function remove(itemToDelete) {
-    const newArr = cartItems.filter((item) => {
-      return item.id !== itemToDelete.id;
-    });
-    if (newArr.length === 0) {
-      setCartItems([]);
-      localStorage.setItem("cart", JSON.stringify([]));
-      window.dispatchEvent(new Event("storage"));
-    } else {
-      setCartItems(newArr);
-      localStorage.setItem("cart", JSON.stringify(newArr));
-      window.dispatchEvent(new Event("storage"));
-    }
-  }
+
+  const remove = (indexToRemove) => {
+    var config = {
+      method: "post",
+      url: process.env.REACT_APP_API_BASE_URL + "/removeCart",
+      data: {
+        cartId:
+          "cartID" in sessionStorage
+            ? sessionStorage.getItem("cartID")
+            : undefined,
+        indexToRemove: indexToRemove,
+      },
+    };
+
+    axios(config)
+      .then((response) => {
+        if (response.status === 200) {
+          // Create a copy of the current state array
+          const updatedItems = [...cartItems];
+
+          setTotal(total - cartItems[indexToRemove].price);
+          setToPay(toPay - cartItems[indexToRemove].price);
+
+          // Use splice to remove the item at the desired index
+          // updatedItems.splice(indexToRemove, 1);
+
+          // Or, use filter to remove the item at the desired index
+          const filteredItems = updatedItems.filter(
+            (_, index) => index !== indexToRemove
+          );
+
+          // Update the state with the new array
+          setCartItems(filteredItems);
+        }
+      })
+      .catch((error) => {
+        alert(error.response.data);
+      });
+  };
 
   useEffect(() => {
-    var AmmountToPay = 0;
-    var BitsSpent = 0;
-    window.addEventListener("storage", () => {
-      cartItems.map((item) => {
-        AmmountToPay =
-          AmmountToPay +
-          (item.price.toFixed(2) - (item.price * item.discount) / 100) *
-            item.quantity;
+    var config = {
+      method: "post",
+      url: process.env.REACT_APP_API_BASE_URL + "/getCart",
+      data: {
+        id:
+          "cartID" in sessionStorage
+            ? sessionStorage.getItem("cartID")
+            : undefined,
+      },
+    };
 
-        BitsSpent = BitsSpent + item.bitsSpent;
+    axios(config)
+      .then((response) => {
+        if (response.status === 200) {
+          setCartItems(response.data.cart);
+          setTotal(response.data.total);
+          setToPay(parseFloat(response.data.total) + deliveryCost);
+        }
+      })
+      .catch((error) => {
+        alert(error.response.data);
       });
-      setTotal(AmmountToPay);
-      setTotalBitsSpent(BitsSpent);
-      setCartItems(
-        "cart" in localStorage ? JSON.parse(localStorage.getItem("cart")) : []
-      );
-    });
-
-    setCartItems(
-      "cart" in localStorage ? JSON.parse(localStorage.getItem("cart")) : []
-    );
-    cartItems.map((item) => {
-      AmmountToPay =
-        AmmountToPay +
-        (item.price.toFixed(2) - (item.price * item.discount) / 100) *
-          item.quantity;
-
-      BitsSpent = BitsSpent + item.bitsSpent;
-    });
-
-    setSubTotal(AmmountToPay);
-    setTotalBitsSpent(BitsSpent);
-
-    // if (AmmountToPay > 0 && payWithBits) {
-    //   AmmountToPay = AmmountToPay - Math.floor(bitsUsed / 2);
-    // }
-    setTotal(AmmountToPay);
-  });
+  }, [deliveryCost]);
 
   //capture likely error
   const onError = (data, actions) => {
@@ -248,9 +259,9 @@ export default function Checkout(props) {
           <p className="text-gray-400">
             Check your items. And select a suitable shipping method.
           </p>
-          <div className="mt-8 space-y-3 rounded-lg border bg-white px-2 py-4 sm:px-6 dark:bg-gray-900">
+          <div className="mt-4 space-y-3 rounded-lg border bg-white px-2 py-4 sm:px-6 dark:bg-gray-900">
             {cartItems.length > 0 &&
-              cartItems.map((item) => (
+              cartItems.map((item, index) => (
                 <div className="flex flex-row rounded-lg bg-white sm:flex-row dark:bg-gray-900 dark:border-2 dark:border-gray-500">
                   <img
                     className="m-2 h-24 w-28 rounded-md border object-cover object-center"
@@ -262,21 +273,17 @@ export default function Checkout(props) {
                       {item.title}
                     </span>
                     <span className="float-left text-gray-400 dark:text-white">
-                      $
+                      £{item.price}
+                    </span>
+                    {/* <p className="text-lg font-bold dark:text-white">
+                      £
                       {item.price.toFixed(2) -
                         (item.price * item.discount) / 100}
-                      x {item.quantity}
-                    </span>
-                    <p className="text-lg font-bold dark:text-white">
-                      $
-                      {(item.price.toFixed(2) -
-                        (item.price * item.discount) / 100) *
-                        item.quantity}
-                    </p>
+                    </p> */}
                     <div
-                      className="text-blue-700 "
+                      className="text-blue-700 cursor-pointer"
                       onClick={() => {
-                        remove(item);
+                        remove(index);
                       }}
                     >
                       Remove
@@ -295,11 +302,14 @@ export default function Checkout(props) {
                 id="radio_1"
                 type="radio"
                 name="radio"
-                checked
+                checked={deliveryCost === 15 ? true : false}
+                onChange={(e) => {
+                  e.target.value ? setDeliveryCost(15) : setDeliveryCost(50);
+                }}
               />
-              <span className="peer-checked:border-gray-700 absolute right-4 top-1/2 box-content block h-3 w-3 -translate-y-1/2 rounded-full border-8 border-gray-300 bg-white"></span>
+              <span className="peer-checked:border-gray-700 absolute right-4 top-1/2 box-content block h-3 w-3 -translate-y-1/2 rounded-full border-8 border-gray-300 bg-white "></span>
               <label
-                className="peer-checked:border-2 peer-checked:border-gray-700 peer-checked:bg-gray-50 flex cursor-pointer select-none rounded-lg border border-gray-300 p-4"
+                className="peer-checked:border-2 peer-checked:border-gray-700 peer-checked:bg-gray-50 flex cursor-pointer select-none rounded-lg border border-gray-300 p-4 peer-checked:text-gray-900"
                 for="radio_1"
               >
                 <img
@@ -308,7 +318,9 @@ export default function Checkout(props) {
                   alt=""
                 />
                 <div className="ml-5">
-                  <span className="mt-2 font-semibold">Fedex Delivery</span>
+                  <span className="mt-2 font-semibold dark:text-white ">
+                    Local Shipment
+                  </span>
                   <p className="text-slate-500 text-sm leading-6">
                     Delivery: 2-4 Days
                   </p>
@@ -321,7 +333,10 @@ export default function Checkout(props) {
                 id="radio_2"
                 type="radio"
                 name="radio"
-                checked
+                checked={deliveryCost === 50 ? true : false}
+                onChange={(e) => {
+                  e.target.value ? setDeliveryCost(50) : setDeliveryCost(15);
+                }}
               />
               <span className="peer-checked:border-gray-700 absolute right-4 top-1/2 box-content block h-3 w-3 -translate-y-1/2 rounded-full border-8 border-gray-300 bg-white"></span>
               <label
@@ -334,9 +349,11 @@ export default function Checkout(props) {
                   alt=""
                 />
                 <div className="ml-5">
-                  <span className="mt-2 font-semibold">Fedex Delivery</span>
+                  <span className="mt-2 font-semibold">
+                    International Shipment
+                  </span>
                   <p className="text-slate-500 text-sm leading-6">
-                    Delivery: 2-4 Days
+                    Delivery: 2-4 Weeks
                   </p>
                 </div>
               </label>
@@ -353,7 +370,7 @@ export default function Checkout(props) {
             <div className="flex w-full flex-row justify-between">
               <span className="font-semibold dark:text-white">SubTotal:</span>
               <span className="float-right text-gray-400 dark:text-white">
-                {total + "USD "}
+                {total + "£ "}
               </span>
             </div>
             <div className="flex w-full flex-row justify-between">
@@ -368,7 +385,7 @@ export default function Checkout(props) {
             <div className="flex w-full flex-row justify-between">
               <span className="font-semibold dark:text-white">Total:</span>
               <span className="float-right text-gray-400 dark:text-white">
-                {subtotal + deliveryCost + "USD "}
+                {toPay.toFixed(2) + "£ "}
               </span>
             </div>
           </div>
@@ -380,7 +397,9 @@ export default function Checkout(props) {
             <div className="text-md dark:text-gray-400 mb-4">
               Select a payment method from following
             </div>
-            <PayPalScriptProvider options={{ "client-id": CLIENT_ID }}>
+            <PayPalScriptProvider
+              options={{ "client-id": CLIENT_ID, currency: "GBP" }}
+            >
               <PayPalButtons
                 style={{
                   layout: "vertical",
@@ -393,7 +412,7 @@ export default function Checkout(props) {
                     .create({
                       purchase_units: [
                         {
-                          amount: { currency_code: "USD", value: subtotal },
+                          amount: { value: toPay },
                         },
                       ],
                     })
@@ -408,10 +427,14 @@ export default function Checkout(props) {
 
                     var config = {
                       method: "post",
-                      url: process.env.REACT_APP_API_BASE_URL + "/neworder",
+                      url:
+                        process.env.REACT_APP_API_BASE_URL + "/orderComplete",
                       data: {
                         orderid: details.id,
-                        cart: cartItems,
+                        cart:
+                          "cartID" in sessionStorage
+                            ? sessionStorage.getItem("cartID")
+                            : undefined,
                         user: JSON.parse(localStorage.getItem("userid")),
                         username: JSON.parse(localStorage.getItem("username")),
                         status: "Paid",
@@ -423,8 +446,7 @@ export default function Checkout(props) {
                           email: details.payer.email_address,
                         },
                         shipping: details.purchase_units[0].shipping.address,
-                        total: subtotal,
-                        bitsSpent: totalBitsSpent,
+                        total: toPay.toFixed(2),
                       },
                     };
 
@@ -432,7 +454,6 @@ export default function Checkout(props) {
                       if (response.status === 200) {
                         setShowModal(true);
                         setSuccess(true);
-                        localStorage.setItem("cart", JSON.stringify([]));
                       }
                     });
                   });

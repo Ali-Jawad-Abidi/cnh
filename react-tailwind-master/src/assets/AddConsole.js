@@ -4,9 +4,10 @@ import axios from "axios";
 import Header from "./Header";
 import Footer from "./Footer";
 import Compressor from "compressorjs";
-import Loading from "./Loading";
 import { LoginComponent } from "./LoginPage";
 import React from "react";
+import WysiwygEditor from "./TextArea";
+import ImageGrid from "./ImageGrid";
 
 var Colors = [
   "Red",
@@ -36,7 +37,7 @@ var ReleaseType = [
 var RegionalCode = ["PAL", "NTSC-U/C", "NTSC-J", "NTSC-C", "Region Free"];
 
 export default function AddConsole(props) {
-  var [showbrands, setShowBrands] = useState(null);
+  var [showbrands, setShowBrands] = useState();
   var [consolebrands, setConsoleBrands] = useState(null);
   var [mobilebrands, setMobileBrands] = useState(null);
   var [pcbrands, setPCBrands] = useState(null);
@@ -55,11 +56,12 @@ export default function AddConsole(props) {
       console.log(response.data);
       if (response.status === 200) {
         setSubcats(response.data);
+        setShowNext(2);
       }
     });
   }
 
-  var [type, setType] = useState();
+  var [type, setType] = useState("");
   var [brand, setBrand] = useState();
   var [cat, setCat] = useState();
   var [country, setCountry] = useState();
@@ -74,14 +76,18 @@ export default function AddConsole(props) {
   var [images, setImages] = useState([]);
   var [releaseDate, setReleaseDate] = useState("");
   var [totalUnitsReleased, setTotalUnitsReleased] = useState(0);
+  const [showNext, setShowNext] = useState(0);
 
   function selectType(type) {
     if (type === "console") {
       setShowBrands(consolebrands);
+      setShowNext(1);
     } else if (type === "mobile") {
       setShowBrands(mobilebrands);
+      setShowNext(1);
     } else if (type === "pc") {
       setShowBrands(pcbrands);
+      setShowNext(1);
     }
   }
   useEffect(() => {
@@ -140,10 +146,7 @@ export default function AddConsole(props) {
   console.log(success);
 
   if (localStorage.getItem("userid") === null) {
-    localStorage.setItem(
-      "redirectTo",
-      JSON.stringify(window.location.pathname)
-    );
+    localStorage.setItem("redirectTo", JSON.stringify(window.location.href));
     return (
       <div>
         <Header />
@@ -242,8 +245,12 @@ export default function AddConsole(props) {
                   <option value="pc">PC</option>
                 </select>
               </div>
-
-              {showbrands !== null && (
+              {showNext >= 1 && showbrands.length < 1 && (
+                <p className="text-center text-sm font-bold dark:text-white">
+                  No Brands found. Please choose another Type.
+                </p>
+              )}{" "}
+              {showNext >= 1 && showbrands.length > 0 && (
                 <>
                   <div>
                     <label
@@ -266,7 +273,13 @@ export default function AddConsole(props) {
                       ))}
                     </select>
                   </div>
-                  {subcats.length > 0 && (
+                  {showNext === 2 && subcats.length < 1 && (
+                    <p className="text-center text-sm font-bold dark:text-white">
+                      No Sub Categories found for this brand. Please choose
+                      another Brand or Type.
+                    </p>
+                  )}{" "}
+                  {showNext === 2 && subcats.length > 0 && (
                     <>
                       <div>
                         <label
@@ -431,15 +444,20 @@ export default function AddConsole(props) {
                         >
                           Description
                         </label>
-                        <textarea
+                        {/* <textarea
                           id="message"
                           rows="4"
                           class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                           placeholder="Add features and attributes..."
                           onChange={(e) => setDescription(e.target.value)}
-                        ></textarea>
+                        ></textarea> */}
+
+                        <WysiwygEditor
+                          text={description}
+                          setText={setDescription}
+                        />
                       </div>
-                      <div>
+                      {/* <div>
                         <label
                           for="message"
                           class="block text-left mb-2 text-sm font-medium text-gray-900 dark:text-white"
@@ -492,6 +510,9 @@ export default function AddConsole(props) {
                             Upload Images
                           </label>
                         </div>
+                      </div> */}
+                      <div>
+                        <ImageGrid images={images} setImages={setImages} />
                       </div>
                       <button
                         type="button"

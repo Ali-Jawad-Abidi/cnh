@@ -299,6 +299,7 @@ import Carousel from "./Carousel";
 import Footer from "./Footer";
 import Loading from "./Loading";
 import { MuseumItem, BrandItem } from "./Hottopics";
+import HtmlParser from "./HtmlParser";
 
 export default function HomePage(props) {
   const [mainBlog, setMainBlog] = useState([]);
@@ -326,6 +327,7 @@ export default function HomePage(props) {
 
         setMainBlog(mainBlogResponse.data);
         setSecondaryBlog(secondaryBlogResponse.data);
+        console.log(secondaryBlogResponse.data);
         const data = brandsResponse.data;
         setConsoleBrands(
           data.Console.length > 5 ? data.Console.slice(0, 5) : data.Console
@@ -354,14 +356,14 @@ export default function HomePage(props) {
 
     return mainBlog.map((blog, index) => (
       <Link to={`/blogs/${blog._id}`} key={index}>
-        <div className="bg-gray-200 flex flex-col lg:flex-row dark:bg-gray-800 shadow-xl rounded-xl p-4 flex flex-row gap-2">
+        <div className="bg-gray-200 flex flex-col lg:flex-row dark:bg-gray-800 shadow-xl rounded-xl p-4 gap-4">
           <img
             src={blog.image}
             alt="blog image"
             className="object-cover h-48 lg:w-2/5 rounded-lg"
           />
           <div className="lg:w-3/5 text-left line-clamp-5 dark:text-white text-bold text-xl">
-            {blog.text}
+            <HtmlParser htmlContent={blog.text} />
           </div>
         </div>
       </Link>
@@ -479,7 +481,7 @@ export default function HomePage(props) {
   const renderBrandSlides = () => {
     const brandSlides = Object.entries(brandsArray).map(([key, value]) => (
       <div key={key}>
-        <p className="font-bold text-lg">{key}</p>
+        <p className="font-bold text-lg text-left mx-2">{key}</p>
         {value}
       </div>
     ));
@@ -494,64 +496,69 @@ export default function HomePage(props) {
   return (
     <div className="dark:bg-gray-900 dark:text-white flex flex-col gap-2 min-h-screen">
       <Header />
-      <div className="min-h-screen">
-        {mainBlog && (
-          <div className="mx-6 flex flex-col gap-2">
-            <div>
-              <span className="text-3xl dark:text-white upper">THE</span>
-              <span className="text-3xl dark:text-white font-bold upper">
-                {" LATEST"}
-              </span>
-            </div>
-            <Carousel slides={renderMainBlog()} slide />
-          </div>
-        )}
+      <Grid container>
+        <Grid item xs={1} md={1} sm={1}></Grid>
+        <Grid item xs={10} md={10} sm={10}>
+          <div className="min-h-screen">
+            {mainBlog && (
+              <div className="mx-6 flex flex-col gap-2">
+                <div>
+                  <span className="text-3xl dark:text-white upper">THE</span>
+                  <span className="text-3xl dark:text-white font-bold upper">
+                    {" LATEST"}
+                  </span>
+                </div>
+                <Carousel slides={renderMainBlog()} slide />
+              </div>
+            )}
 
-        {secondaryBlog && (
-          <Link
-            className="mx-6 flex flex-col gap-2 pointer-cursor"
-            to={`/blogs/${secondaryBlog._id}`}
-          >
-            <div>
+            {secondaryBlog && (
+              <Link
+                className="mx-6 flex flex-col gap-2 pointer-cursor"
+                to={`/blogs/${secondaryBlog._id}`}
+              >
+                <div>
+                  <div>
+                    <span className="text-3xl dark:text-white upper">HOT</span>
+                    <span className="text-3xl dark:text-white font-bold upper">
+                      {" TOPICS"}
+                    </span>
+                  </div>
+                  <div className="bg-gray-200 flex flex-col lg:flex-row dark:bg-gray-800 shadow-xl rounded-xl p-4 gap-4">
+                    <img
+                      src={secondaryBlog.image}
+                      alt="blog image"
+                      className="object-cover h-48 lg:w-2/5 rounded-lg"
+                    />
+                    <div className="lg:w-3/5 text-left line-clamp-5 dark:text-white text-bold text-xl">
+                      <HtmlParser htmlContent={secondaryBlog.text} />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            )}
+
+            <div className="flex flex-col gap-2 mt-4">
               <div>
-                <span className="text-3xl dark:text-white upper">HOT</span>
+                <span className="text-3xl dark:text-white upper">BROWSE</span>
                 <span className="text-3xl dark:text-white font-bold upper">
-                  {" TOPICS"}
+                  {" BRANDS"}
                 </span>
               </div>
-              <div className="bg-gray-200 flex flex-col lg:flex-row dark:bg-gray-800 shadow-xl rounded-xl p-4 flex flex-row gap-2">
-                <img
-                  src={secondaryBlog.image}
-                  alt="blog image"
-                  className="object-cover h-48 lg:w-2/5 rounded-lg"
-                />
-                <div className="lg:w-3/5 text-left line-clamp-5 dark:text-white text-bold text-xl">
-                  {secondaryBlog.text}
-                </div>
+              <Carousel slides={renderBrandSlides()} slide={false} />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-3xl dark:text-white font-bold">
+                {"MUSEUMS"}
+              </span>
+              <div className="dark:bg-gray-800 dark:text-white w-full rounded-lg shadow-lg border-2">
+                {renderMuseums()}
               </div>
             </div>
-          </Link>
-        )}
-
-        <div className="flex flex-col gap-2">
-          <div>
-            <span className="text-3xl dark:text-white upper">BROWSE</span>
-            <span className="text-3xl dark:text-white font-bold upper">
-              {" BRANDS"}
-            </span>
           </div>
-          <Carousel slides={renderBrandSlides()} slide={false} />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <span className="text-3xl dark:text-white font-bold">
-            {"MUSEUMS"}
-          </span>
-          <div className="dark:bg-gray-800 dark:text-white w-full rounded-lg shadow-lg border-2">
-            {renderMuseums()}
-          </div>
-        </div>
-      </div>
+        </Grid>
+      </Grid>
       <Footer />
     </div>
   );

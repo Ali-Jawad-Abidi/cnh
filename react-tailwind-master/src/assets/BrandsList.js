@@ -86,7 +86,7 @@ export default function BrandsList(props) {
       : []
     : brands !== null
     ? brands.filter((brand) => {
-        return brand.name.includes(search);
+        return brand.name.toLowerCase().includes(search.toLowerCase());
       })
     : [];
 
@@ -383,6 +383,10 @@ export function AddBrand(props) {
 
   function Submit(e) {
     e.preventDefault();
+    if (brandImage === "") {
+      alert("Please also add image for the brand");
+      return false;
+    }
     var config = {
       method: "post",
       url: process.env.REACT_APP_API_BASE_URL + "/addbrand",
@@ -403,10 +407,7 @@ export function AddBrand(props) {
   }
 
   if (localStorage.getItem("userid") === null) {
-    localStorage.setItem(
-      "redirectTo",
-      JSON.stringify(window.location.pathname)
-    );
+    localStorage.setItem("redirectTo", JSON.stringify(window.location.href));
   }
 
   return (

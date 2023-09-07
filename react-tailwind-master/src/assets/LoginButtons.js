@@ -73,7 +73,8 @@ export default function LoginButtons() {
     if (
       email === null ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-      country === null
+      country === null ||
+      country === ""
     ) {
       setError("Email or Country is incorrect!");
     } else {

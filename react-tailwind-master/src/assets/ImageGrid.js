@@ -7,7 +7,7 @@ const ImageGrid = (props) => {
   function handleImageUpload(e) {
     if (props.setImagesHaveChanged) props.setImagesHaveChanged(true);
     var imgs = Array.from(e.target.files);
-    imgs = imgs.slice(0, 5);
+    imgs = imgs.slice(0, props.limit ? props.limit : 5);
 
     imgs.map((file) => {
       new Compressor(file, {
@@ -79,34 +79,36 @@ const ImageGrid = (props) => {
             </button>
           </div>
         ))}
-        {images.length < 5 && (
-          <div className="relative">
-            <label htmlFor="image-upload" className="cursor-pointer">
-              <div className="w-full h-auto bg-gray-200 flex justify-center items-center rounded">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-12 w-12 text-gray-400"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 1a9 9 0 100 18 9 9 0 000-18zM4 10a1 1 0 011-1h2V7a1 1 0 112 0v2h2a1 1 0 110 2h-2v2a1 1 0 11-2 0v-2H5a1 1 0 01-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+        {images.length < props.limit
+          ? props.limit
+          : 5 && (
+              <div className="relative">
+                <label htmlFor="image-upload" className="cursor-pointer">
+                  <div className="w-full h-auto bg-gray-200 flex justify-center items-center rounded">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-12 w-12 text-gray-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 1a9 9 0 100 18 9 9 0 000-18zM4 10a1 1 0 011-1h2V7a1 1 0 112 0v2h2a1 1 0 110 2h-2v2a1 1 0 11-2 0v-2H5a1 1 0 01-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                </label>
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  multiple
+                />
               </div>
-            </label>
-            <input
-              id="image-upload"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageUpload}
-              multiple
-            />
-          </div>
-        )}
+            )}
       </div>
     </div>
   );
