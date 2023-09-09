@@ -10,7 +10,7 @@ export default function CommentBox(props) {
 
   var [isAdmin, setIsAdmin] = useState(false);
   var id = JSON.parse(localStorage.getItem("userid")) || null;
-  var token = JSON.parse(localStorage.getItem("token")) || null;
+  var token = JSON.parse(localStorage.getItem("token")).token || null;
 
   useEffect(() => {
     if (props.comments !== undefined && props.comments.length > 0) {

@@ -137,11 +137,8 @@ const Header = (props) => {
   const [currentPage, setCurrentPage] = useState(
     sessionStorage.getItem("currentPage") || "Home"
   );
-  var len =
-    "cart" in localStorage
-      ? JSON.parse(localStorage.getItem("cart")).length
-      : 0;
-  var [total, setTotal] = useState(len);
+
+  var [total, setTotal] = useState(0);
   var profImage =
     "profileImage" in localStorage &&
     localStorage.getItem("profileImage") !== undefined

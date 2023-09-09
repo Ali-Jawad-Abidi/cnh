@@ -1,4 +1,4 @@
-import axios from "axios";
+import axiosConfig from "./axiosConfig";
 import { useEffect, useState } from "react";
 import Loading from "./Loading";
 import React from "react";
@@ -15,7 +15,7 @@ export default function MuseumsList(props) {
       params: { start: museums.length },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         var arr = museums;
         arr = arr.concat(response.data.museums);
@@ -131,7 +131,7 @@ export default function MuseumsList(props) {
                       },
                     };
 
-                    axios(config).then(function (response) {
+                    axiosConfig(config).then(function (response) {
                       if (response.status === 200) {
                         console.log(response.data);
                         setMuseums(
@@ -180,7 +180,7 @@ function AddMuseum(props) {
         ismuseum: ismuseum,
       },
     };
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         props.onAdd(response.data);
       }

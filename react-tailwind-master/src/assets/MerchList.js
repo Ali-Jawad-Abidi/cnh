@@ -1,4 +1,4 @@
-import axios from "axios";
+import axiosConfig from "./axiosConfig";
 import { useEffect, useState } from "react";
 import ImageGrid from "./ImageGrid";
 import React from "react";
@@ -11,7 +11,7 @@ export default function ProductList(props) {
   const [conversionRate, setConversionRate] = useState(1);
 
   function fetchConversionRate() {
-    axios
+    axiosConfig
       .get(process.env.REACT_APP_API_BASE_URL + "/conversionRate")
       .then((response) => {
         if (response.status === 200) {
@@ -26,7 +26,7 @@ export default function ProductList(props) {
       url: process.env.REACT_APP_API_BASE_URL + "/getmerch",
       data: { start: products.length },
     };
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         var arr = products;
         arr = arr.concat(response.data.items);
@@ -154,7 +154,7 @@ export default function ProductList(props) {
                       data: { id: product._id },
                     };
 
-                    axios(config).then(function (response) {
+                    axiosConfig(config).then(function (response) {
                       if (response.status === 200) {
                         setProducts(
                           products.filter((u) => {
@@ -208,7 +208,7 @@ function EditMerch(props) {
       params: { id: props.item._id },
     };
 
-    axios(config).then((response) => {
+    axiosConfig(config).then((response) => {
       if (response.status === 200) {
         setImages(response.data.images);
         setThumbnail(response.data.thumbnail);
@@ -241,7 +241,7 @@ function EditMerch(props) {
       data: { id: props.item._id, merch: newMerch },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         props.onUpdate(response.data.result);
       }
@@ -495,7 +495,7 @@ function AddMerch(props) {
       url: process.env.REACT_APP_API_BASE_URL + "/getmerchcats",
       method: "get",
     };
-    axios(config).then((response) => {
+    axiosConfig(config).then((response) => {
       if (response.status === 200) {
         setCats(response.data);
       } else {
@@ -535,7 +535,7 @@ function AddMerch(props) {
         data: newMerch,
       };
 
-      axios(config).then(function (response) {
+      axiosConfig(config).then(function (response) {
         newMerch._id = response.data.id;
         props.onAdd(newMerch);
       });

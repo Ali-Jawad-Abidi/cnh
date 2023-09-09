@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import ImageGrid from "./ImageGrid";
-import axios from "axios";
+import axiosConfig from "./axiosConfig";
 
 export default function EarnBits() {
   const [images, setImages] = useState([]);
@@ -9,7 +9,7 @@ export default function EarnBits() {
   const [selectedOption, setSelectedOption] = useState("");
   const [options, setOptions] = useState({});
   const fetchBitAwards = () => {
-    axios
+    axiosConfig
       .get(process.env.REACT_APP_API_BASE_URL + "/getBitsAward")
       .then((response) => {
         if (response.status === 200) {
@@ -146,7 +146,7 @@ export default function EarnBits() {
                               ),
                             },
                           };
-                          axios(config).then((res) => {
+                          axiosConfig(config).then((res) => {
                             if (res.status === 200) {
                               alert("Request added succesfully");
                               setShowUploadModal(false);

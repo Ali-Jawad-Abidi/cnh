@@ -2,7 +2,7 @@ import React from "react";
 import { Fragment, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { useEffect } from "react";
-import axios from "axios";
+import axiosConfig from "./axiosConfig";
 import { Spinner } from "./Loading";
 import { Link } from "react-router-dom";
 import CloseIcon from "@mui/icons-material/Close";
@@ -187,7 +187,7 @@ export default function ProfilePanel(props) {
       },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         setUser(response.data);
       }

@@ -11,18 +11,19 @@ export default function Logout() {
           "userid" in localStorage
             ? JSON.parse(localStorage.getItem("userid"))
             : undefined,
-        accessToken: JSON.parse(localStorage.getItem("token")),
+        accessToken: JSON.parse(localStorage.getItem("token")).token,
       },
     };
 
     axios(config).then(function (response) {
-      if (response.status === 200) {
-        console.log("Logged Out Succesfully");
+      if (response) {
         var redirectTo =
-          JSON.parse(localStorage.getItem("redirectTo")) ===
-          "xGpAQhWobyTxIPx51LAKKOGnrWZNUtcOImuVUIPdqc="
-            ? "/"
-            : JSON.parse(localStorage.getItem("redirectTo"));
+          "redirectTo" in localStorage
+            ? JSON.parse(localStorage.getItem("redirectTo")) ===
+              "xGpAQhWobyTxIPx51LAKKOGnrWZNUtcOImuVUIPdqc="
+              ? "/"
+              : JSON.parse(localStorage.getItem("redirectTo"))
+            : "/";
 
         localStorage.clear();
         window.location = redirectTo;

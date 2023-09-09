@@ -2444,7 +2444,7 @@ async function sendEmail(data, accessToken, refreshToken) {
     from: "computernostalgiaheaven@gmail.com",
     to: data.email,
     subject: "Email Verification",
-    text: `Click the below link to verify your email\nhttp://localhost:3000/verify/?_id=${data._id}&accessToken=${accessToken}&refreshToken=${refreshToken}`,
+    text: `Click the below link to verify your email\nhttps://thecnh.co.uk:3000/verify/?_id=${data._id}&accessToken=${accessToken}&refreshToken=${refreshToken}`,
   };
 
   try {
@@ -2460,7 +2460,9 @@ async function setupTwoFactorAuthentication(data) {
   const secret = speakeasy.generateSecret();
   data.twoFactorSecret = secret.base32;
   data.twoFactorEnabled = true;
-  data.otpauth_url = secret.otpauth_url;
+
+  data.otpauth_url = `otpauth://totp/SecretKey?secret=${secret.base32}&issuer=TheCNH`;
+
   data.twoFactorSetup = true; //not required
   try {
     await data.save();
@@ -2507,6 +2509,7 @@ async function HandleAuth(data, res, isSignUp) {
     token.save();
 
     const qrCodeOptions = {
+      name: "The CNH Secret Key",
       errorCorrectionLevel: "L", // Error correction level (L - low, M - medium, Q - quartile, H - high)
       type: "image/png", // Output QR code image format
       quality: 0.9, // Image quality (0.1 to 1)
@@ -2523,8 +2526,8 @@ async function HandleAuth(data, res, isSignUp) {
 
       res.status(200).json({
         message: "Sign In Successful.",
-        accessToken: accessToken,
-        refreshToken: refreshToken,
+        accessToken: { token: accessToken, assignedAt: new Date().getTime() },
+        refreshToken: { token: refreshToken, assignedAt: new Date().getTime() },
         status: true,
         id: data.id,
         username: data.username,
@@ -2538,8 +2541,8 @@ async function HandleAuth(data, res, isSignUp) {
       console.log(codeString);
       res.status(200).json({
         message: "Login Successful.",
-        accessToken: accessToken,
-        refreshToken: refreshToken,
+        accessToken: { token: accessToken, assignedAt: new Date().getTime() },
+        refreshToken: { token: refreshToken, assignedAt: new Date().getTime() },
         status: true,
         id: data.id,
         username: data.username,
@@ -2560,13 +2563,19 @@ async function HandleAuth(data, res, isSignUp) {
 app.post("/api/refresh", async (req, res) => {
   const { refreshToken } = req.body;
 
+  console.log(refreshToken);
+
   if (!refreshToken) {
     return res.status(400).json({ message: "Refresh token is required" });
   }
 
   try {
+    const tokens = await tokenModel.find({});
+    console.log(tokens);
     // Verify the refresh token against your database
-    const existingToken = await Token.findOne({ refreshToken });
+    const existingToken = await tokenModel.findOne({
+      refreshToken: refreshToken.token,
+    });
 
     if (!existingToken) {
       return res.status(401).json({ message: "Invalid refresh token" });
@@ -2576,10 +2585,15 @@ app.post("/api/refresh", async (req, res) => {
     const newAccessToken = jwt.sign(
       { userId: existingToken.userId },
       ACCESS_TOKEN_SECRET,
-      { expiresIn: "20m" } // Set the expiration time for the new access token
+      { expiresIn: "30m" } // Set the expiration time for the new access token
     );
 
-    return res.status(200).json({ accessToken: newAccessToken });
+    existingToken.accessToken = newAccessToken;
+    await existingToken.save();
+
+    return res
+      .status(200)
+      .json({ accessToken: newAccessToken, assignedAt: new Date().getTime() });
   } catch (error) {
     console.error("Error refreshing token:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -2637,17 +2651,20 @@ app.post("/api/getCartLength", async (req, res) => {
   res.status(200).send(JSON.stringify(cart.items.length));
 });
 
-app.get("/api/logout", async (req, res) => {
-  if (req.query.accessToken && req.query.id) {
-    const cart = await cartModel.deleteOne({ user: req.query.id });
-
-    tokenModel.deleteOne({ accessToken: req.query.token }, (err, result) => {
-      if (err) {
-        res.status(400).send("Error Deleting Token");
-      } else {
-        res.status(200).send("Token Deleted Successfully");
+app.post("/api/logout", async (req, res) => {
+  // console.log(req.query);
+  if (req.body.accessToken && req.body.id) {
+    const cart = await cartModel.deleteOne({ user: req.body.id });
+    tokenModel.deleteOne(
+      { accessToken: req.body.accessToken },
+      (err, result) => {
+        if (err) {
+          res.status(400).send("Error Deleting Token");
+        } else {
+          res.status(200).send("Token Deleted Successfully");
+        }
       }
-    });
+    );
   } else {
     res.status(200).send("Logged out Successfully");
   }

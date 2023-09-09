@@ -3,7 +3,7 @@ import Header from "./Header";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Loading from "./Loading";
-import axios from "axios";
+import axiosConfig from "./axiosConfig";
 import { Link } from "react-router-dom";
 import Footer from "./Footer";
 import icon from "./img/defaulticon.webp";
@@ -30,7 +30,7 @@ export default function ProfilePage(props) {
   var [error, setError] = useState("");
 
   const fetchBitAwards = () => {
-    axios
+    axiosConfig
       .get(process.env.REACT_APP_API_BASE_URL + "/getBitsAward")
       .then((response) => {
         if (response.status === 200) {
@@ -55,7 +55,7 @@ export default function ProfilePage(props) {
       params: { id: id },
     };
 
-    axios(config).then((response) => {
+    axiosConfig(config).then((response) => {
       console.log(response.data);
       if (response.status === 200) {
         if (response.data === false) {
@@ -136,7 +136,7 @@ export default function ProfilePage(props) {
                                   },
                                 };
 
-                                axios(config).then((response) => {
+                                axiosConfig(config).then((response) => {
                                   if (response.status === 200) {
                                     localStorage.setItem(
                                       "profileImage",
@@ -244,7 +244,7 @@ export default function ProfilePage(props) {
                                     updatedEmail: updatedEmail,
                                   },
                                 };
-                                axios(config).then((response) => {
+                                axiosConfig(config).then((response) => {
                                   console.log(response);
                                   if (response.status === 200) {
                                     alert("Email Updated Successfully");

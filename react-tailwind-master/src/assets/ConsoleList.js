@@ -1,4 +1,4 @@
-import axios from "axios";
+import axiosConfig from "./axiosConfig";
 import { useEffect, useState } from "react";
 import Loading from "./Loading";
 import ReactFileReader from "react-file-reader";
@@ -18,7 +18,7 @@ export default function ConsoleList(props) {
       params: { start: consoles.length },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         var arr = consoles;
         arr = arr.concat(response.data.consoles);
@@ -38,7 +38,7 @@ export default function ConsoleList(props) {
       params: { start: unapprovedconsoles.length },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         var arr = unapprovedconsoles;
         arr = arr.concat(response.data.consoles);
@@ -179,7 +179,7 @@ export default function ConsoleList(props) {
                       },
                     };
 
-                    axios(config).then(function (response) {
+                    axiosConfig(config).then(function (response) {
                       if (response.status === 200) {
                         alert(response.data);
                         props.unapproved
@@ -256,7 +256,7 @@ function EditConsole(props) {
       data: { id: props.item._id, con: newConsole },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) alert(response.data.result);
     });
   }
@@ -448,7 +448,7 @@ function EditConsole(props) {
                           data: { id: props.item._id },
                         };
 
-                        axios(config).then(function (response) {
+                        axiosConfig(config).then(function (response) {
                           alert(response.data);
                           props.onDelete(props.item);
                         });
@@ -504,7 +504,7 @@ function EditWhereAmI(props) {
       data: { id: props.item._id, whereami: data },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         setShowModal(false);
       }
@@ -689,7 +689,7 @@ function EditCommonFaults(props) {
         ids: props.item.commonfaults,
       },
     };
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         setCommonFaults(response.data);
       } else {
@@ -707,7 +707,7 @@ function EditCommonFaults(props) {
         faults: uploads,
       },
     };
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         console.log(response.data);
         var a = commonfaults;
@@ -782,7 +782,7 @@ function EditCommonFaults(props) {
                                   cf: doc._id,
                                 },
                               };
-                              axios(config).then(function (response) {
+                              axiosConfig(config).then(function (response) {
                                 if (response.status === 200) {
                                   setCommonFaults(
                                     commonfaults.filter((cf) => {
@@ -877,7 +877,7 @@ function EditDocuments(props) {
         ids: props.item.documents,
       },
     };
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         setDocuments(response.data);
       } else {
@@ -896,7 +896,7 @@ function EditDocuments(props) {
         documents: uploads,
       },
     };
-    axios(config).then(function (r) {
+    axiosConfig(config).then(function (r) {
       if (r.status === 200) {
         var arr = documents;
         arr = arr.concat(uploads);
@@ -971,7 +971,7 @@ function EditDocuments(props) {
                                   doc: doc._id,
                                 },
                               };
-                              axios(config).then(function (r) {
+                              axiosConfig(config).then(function (r) {
                                 if (r.status === 200) {
                                   setDocuments(
                                     documents.filter((d) => {

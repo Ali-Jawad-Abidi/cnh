@@ -1,9 +1,8 @@
 import { countries } from "./Countries";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axiosConfig from "./axiosConfig";
 import Header from "./Header";
 import Footer from "./Footer";
-import Compressor from "compressorjs";
 import { LoginComponent } from "./LoginPage";
 import React from "react";
 import WysiwygEditor from "./TextArea";
@@ -52,7 +51,7 @@ export default function AddConsole(props) {
       params: { id: brand },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       console.log(response.data);
       if (response.status === 200) {
         setSubcats(response.data);
@@ -96,7 +95,7 @@ export default function AddConsole(props) {
       url: process.env.REACT_APP_API_BASE_URL + "/allbrands",
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         setConsoleBrands(response.data.Console);
         setMobileBrands(response.data.Mobile);
@@ -123,7 +122,7 @@ export default function AddConsole(props) {
       regionalcode: regionalCode,
       addedby: JSON.parse(localStorage.getItem("userid")),
       userwhoadded: JSON.parse(localStorage.getItem("username")),
-      token: JSON.parse(localStorage.getItem("token")),
+      token: JSON.parse(localStorage.getItem("token")).token,
       subcat: cat,
     };
     var config = {
@@ -131,7 +130,7 @@ export default function AddConsole(props) {
       url: process.env.REACT_APP_API_BASE_URL + "/addconsole",
       data: ConsoleItem,
     };
-    axios(config).then(function (r) {
+    axiosConfig(config).then(function (r) {
       if (r.status === 200) {
         if (r.data.status) {
           setSuccess(true);

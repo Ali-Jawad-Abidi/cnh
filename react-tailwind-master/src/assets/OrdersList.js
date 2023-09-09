@@ -1,4 +1,4 @@
-import axios from "axios";
+import axiosConfig from "./axiosConfig";
 import { useEffect, useState } from "react";
 import React from "react";
 
@@ -13,7 +13,7 @@ export default function OrdersList(props) {
       url: process.env.REACT_APP_API_BASE_URL + "/getorders",
       data: { start: orders.length },
     };
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         var arr = orders;
         arr = arr.concat(response.data.orders);
@@ -131,7 +131,7 @@ export default function OrdersList(props) {
                       data: { id: order._id, status: e.target.value },
                     };
 
-                    axios(config).then(function (response) {
+                    axiosConfig(config).then(function (response) {
                       if (response.status === 200) {
                         var ord = order;
                         ord.status = e.target.value;
@@ -170,7 +170,7 @@ export default function OrdersList(props) {
                       data: { id: order._id },
                     };
 
-                    axios(config).then(function (response) {
+                    axiosConfig(config).then(function (response) {
                       if (response.status === 200) {
                         alert(response.data);
                       }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axiosConfig from "./axiosConfig";
 
 const bitsAward = {
   "Correcting a mistake": 1,
@@ -191,7 +191,7 @@ function EditUpload(props) {
                         params: { id: props.upload._id },
                       };
 
-                      axios(config).then((res) => {
+                      axiosConfig(config).then((res) => {
                         console.log(res);
                         if (res.status === 200) {
                           var result = confirm("Success!");
@@ -245,7 +245,7 @@ function EditUpload(props) {
                             params: { id: props.upload._id, reason: reason },
                           };
 
-                          axios(config).then((response) => {
+                          axiosConfig(config).then((response) => {
                             if (response.status === 200) {
                               props.onRemove(props.upload);
                               alert("Success");
@@ -281,10 +281,10 @@ export default function UploadList(props) {
       url: process.env.REACT_APP_API_BASE_URL + "/uploads",
       params: {
         start: uploads !== null ? uploads.length : 0,
-        token: JSON.parse(localStorage.getItem("token")),
+        token: JSON.parse(localStorage.getItem("token")).token,
       },
     };
-    axios(config).then((res) => {
+    axiosConfig(config).then((res) => {
       if (res.status === 200) {
         setShowMore(!res.data.isEnd);
         if (uploads === null) {
@@ -423,7 +423,7 @@ export default function UploadList(props) {
                         id: subcat._id,
                       },
                     };
-                    axios(config).then(function (response) {
+                    axiosConfig(config).then(function (response) {
                       if (response.status === 200) {
                         setUploads(
                           uploads.filter((u) => {

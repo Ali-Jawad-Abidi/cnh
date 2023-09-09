@@ -4,7 +4,7 @@ import { Stack } from "@mui/system";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import Loading from "./Loading";
+import { Spinner } from "./Loading";
 import Footer from "./Footer";
 import Header from "./Header";
 import Breadcrumb from "./BreadCrumb";
@@ -58,7 +58,7 @@ import { Box } from "@mui/material";
 // }
 
 export function EcomCard(props) {
-  const addCart = props.addCart;
+  // const addCart = props.addCart;
   return (
     <>
       <div className="group border-gray-700 dark:border-white max-h-[65vh] shadow flex w-full max-w-xs flex-col self-center overflow-hidden rounded-lg border bg-white shadow-md dark:bg-gray-700">
@@ -187,21 +187,21 @@ export function EcomCard(props) {
 
 export function ProductsGrid(props) {
   var merch = props.merch;
-  const addCart = (newItem) => {
-    var cart = JSON.parse(localStorage.getItem("cart")) || [];
-    var found = cart.findIndex((item) => item.id === newItem.id);
-    if (found === -1) {
-      cart.push(newItem);
-      localStorage.setItem("cart", JSON.stringify(cart));
-      window.dispatchEvent(new Event("storage"));
-    } else {
-      if (newItem.quantity !== cart[found]) {
-        cart[found].quantity = newItem.quantity;
-        localStorage.setItem("cart", JSON.stringify(cart));
-      }
-    }
-  };
-  if (merch === []) return <Loading />;
+  // const addCart = (newItem) => {
+  //   var cart = JSON.parse(localStorage.getItem("cart")) || [];
+  //   var found = cart.findIndex((item) => item.id === newItem.id);
+  //   if (found === -1) {
+  //     cart.push(newItem);
+  //     localStorage.setItem("cart", JSON.stringify(cart));
+  //     window.dispatchEvent(new Event("storage"));
+  //   } else {
+  //     if (newItem.quantity !== cart[found]) {
+  //       cart[found].quantity = newItem.quantity;
+  //       localStorage.setItem("cart", JSON.stringify(cart));
+  //     }
+  //   }
+  // };
+  if (merch.length < 0) return <Spinner />;
   return (
     <>
       <Grid container spacing={1}>
@@ -209,7 +209,7 @@ export function ProductsGrid(props) {
           <Grid item xs={6} sm={6} md={3}>
             <EcomCard
               item={item}
-              addCart={addCart}
+              // addCart={addCart}
               conversionRate={props.conversionRate}
             />
           </Grid>
@@ -284,49 +284,47 @@ export default function Store() {
       </h2>
 
       <div className="flex flex-row gap-4 min-h-full min-w-screen pl-4 mt-4">
-        <Box sx={{ display: { xs: "none", md: "none", lg: "flex" } }}>
-          <div className="flex flex-col p-4 dark:bg-gray-800 bg-gray-200 rounded-lg w-1/4">
-            <p className="text-2xl font-semibold text-left dark:text-white">
-              Filter
-            </p>
-            <p className="text-lg font-semibold text-left dark:text-white">
-              Categories
-            </p>
-            <div className="top-2 text-left text-xl z-10">
-              <div className="flex flex-col gap-2 dark:bg-gray-800 bg-gray-200 rounded-lg mt-2">
-                {cats.map((cat, index) => (
-                  <div key={index} class="flex items-center">
-                    <input
-                      id={index}
-                      type="checkbox"
-                      value={cat.name}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                      onChange={(e) => {
-                        console.log(selectedCats);
-                        e.target.checked
-                          ? setSelectedCats((oldArray) => [
-                              ...oldArray,
-                              e.target.value,
-                            ])
-                          : setSelectedCats(
-                              selectedCats.filter(
-                                (rel) => rel !== e.target.value
-                              )
-                            );
-                      }}
-                    />
-                    <label
-                      htmlfor={cat.name}
-                      className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-                    >
-                      {cat.name}
-                    </label>
-                  </div>
-                ))}
-              </div>
+        {/* <Box sx={{ display: { xs: "none", md: "none", lg: "flex" } }}> */}
+        <div className="flex flex-col p-4 dark:bg-gray-800 bg-white rounded-lg w-1/4 shadow-2xl">
+          <p className="text-2xl font-semibold text-left dark:text-white">
+            Filter
+          </p>
+          <p className="text-lg font-semibold text-left dark:text-white">
+            Categories
+          </p>
+          <div className="top-2 text-left text-xl z-10">
+            <div className="flex flex-col gap-2 dark:bg-gray-800 bg-white rounded-lg mt-2">
+              {cats.map((cat, index) => (
+                <div key={index} class="flex items-center">
+                  <input
+                    id={index}
+                    type="checkbox"
+                    value={cat.name}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    onChange={(e) => {
+                      console.log(selectedCats);
+                      e.target.checked
+                        ? setSelectedCats((oldArray) => [
+                            ...oldArray,
+                            e.target.value,
+                          ])
+                        : setSelectedCats(
+                            selectedCats.filter((rel) => rel !== e.target.value)
+                          );
+                    }}
+                  />
+                  <label
+                    htmlfor={cat.name}
+                    className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                  >
+                    {cat.name}
+                  </label>
+                </div>
+              ))}
             </div>
           </div>
-        </Box>
+        </div>
+        {/* </Box> */}
 
         <div className="w-full">
           {filteredList.length > 0 && (

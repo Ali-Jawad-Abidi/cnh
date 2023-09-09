@@ -1,5 +1,5 @@
 import React from "react";
-import axios from "axios";
+import axiosConfig from "./axiosConfig";
 import { useEffect, useState } from "react";
 import Loading from "./Loading";
 import { Link } from "react-router-dom";
@@ -20,7 +20,7 @@ export default function UserList(props) {
       },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         var usrs = users;
         usrs = usrs.concat(response.data.users);
@@ -164,7 +164,7 @@ export default function UserList(props) {
                         },
                       };
 
-                      axios(config).then(function (response) {
+                      axiosConfig(config).then(function (response) {
                         if (response.status === 200) {
                           console.log(response.data);
                         }
@@ -206,7 +206,7 @@ function EditProfile(props) {
       data: { id: props.profile._id, bits: bits },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         var prof = props.profile;
         prof.wallet.bits = bits;

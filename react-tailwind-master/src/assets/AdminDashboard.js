@@ -4,7 +4,7 @@ import Header from "./Header";
 import logo from "./img/logo.webp";
 import Footer from "./Footer";
 import { Spinner } from "./Loading";
-import axios from "axios";
+import axiosConfig from "./axiosConfig";
 import { lazy } from "react";
 import ReactFileReader from "react-file-reader";
 import moment from "moment";
@@ -53,7 +53,7 @@ export function AddBlog(props) {
       data: blog,
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200 && response.data.status) {
         console.log("Blog Added");
         props.onAdd(response.data.msg);
@@ -210,7 +210,7 @@ function BlogList(props) {
       params: { start: blogs.length },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         var tempArr = blogs;
         tempArr = tempArr.concat(response.data.blogs || []);
@@ -324,7 +324,7 @@ function BlogList(props) {
                         },
                       };
 
-                      axios(config).then(function (response) {
+                      axiosConfig(config).then(function (response) {
                         alert(response.data);
                       });
                     }}
@@ -348,7 +348,7 @@ function BlogList(props) {
                       },
                     };
 
-                    axios(config).then(function (response) {
+                    axiosConfig(config).then(function (response) {
                       alert(response.data);
                     });
                   }}
@@ -376,7 +376,7 @@ function BlogList(props) {
                       },
                     };
 
-                    axios(config).then(function (response) {
+                    axiosConfig(config).then(function (response) {
                       if (response.status === 200) {
                         alert(response.data.msg);
                       }
@@ -436,7 +436,7 @@ function EditBlog(props) {
       data: blog,
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200 && response.data.status) {
         console.log("Blog Updated");
         props.onUpdate(blog);
@@ -575,7 +575,7 @@ function Dashboard(props) {
       url: process.env.REACT_APP_API_BASE_URL + "/getstats",
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         setStats(response.data);
       }
@@ -875,7 +875,7 @@ export default function AdminDashboard() {
 
   var [currentPage, setCurrentPage] = useState("Dashboard");
   var id = JSON.parse(localStorage.getItem("userid")) || null;
-  var token = JSON.parse(localStorage.getItem("token")) || null;
+  var token = JSON.parse(localStorage.getItem("token")).token || null;
   useEffect(() => {
     if (id !== null && token !== null) {
       var config = {
@@ -884,7 +884,7 @@ export default function AdminDashboard() {
         data: { id: id, token: token },
       };
 
-      axios(config).then((response) => {
+      axiosConfig(config).then((response) => {
         if (response.status === 200) {
           setIsAdmin(response.data ? 1 : 2);
         }

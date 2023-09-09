@@ -1,4 +1,4 @@
-import axios from "axios";
+import axiosConfig from "./axiosConfig";
 import { useEffect, useState } from "react";
 import ReactFileReader from "react-file-reader";
 import Loading from "./Loading";
@@ -19,7 +19,7 @@ export default function BrandsList(props) {
       params: { start: brands.length },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         var arr = brands;
         arr = arr.concat(response.data.brands);
@@ -39,7 +39,7 @@ export default function BrandsList(props) {
       params: { start: unapprovedBrands.length },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         var arr = unapprovedBrands;
         arr = arr.concat(response.data.brands);
@@ -182,11 +182,12 @@ export default function BrandsList(props) {
                           userid: JSON.parse(localStorage.getItem("userid")),
                           id: brand._id,
                           token:
-                            JSON.parse(localStorage.getItem("token")) || "",
+                            JSON.parse(localStorage.getItem("token")).token ||
+                            "",
                         },
                       };
 
-                      axios(config).then(function (response) {
+                      axiosConfig(config).then(function (response) {
                         if (response.status === 200) {
                           console.log(response.data);
                           setUnapprovedBrands(
@@ -220,7 +221,7 @@ export default function BrandsList(props) {
                         },
                       };
 
-                      axios(config).then(function (response) {
+                      axiosConfig(config).then(function (response) {
                         console.log(response);
                         if (response.status === 200) {
                           props.unapproved
@@ -276,7 +277,7 @@ function EditBrand(props) {
       data: { id: props.brand._id, brand: brand },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         props.onUpdate(response.data);
       }
@@ -399,7 +400,7 @@ export function AddBrand(props) {
         },
       },
     };
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200 && response.data.status) {
         props.onAdd(response.data.msg);
       }

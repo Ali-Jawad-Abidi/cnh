@@ -1,5 +1,5 @@
 import React from "react";
-import axios from "axios";
+import axiosConfig from "./axiosConfig";
 import { useEffect, useState } from "react";
 import Loading from "./Loading";
 import ReactFileReader from "react-file-reader";
@@ -18,7 +18,7 @@ export default function SubcatsList(props) {
       params: { start: subcats.length },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         var arr = subcats;
         arr = arr.concat(response.data.subcats);
@@ -140,7 +140,7 @@ export default function SubcatsList(props) {
                         },
                       };
 
-                      axios(config).then(function (response) {
+                      axiosConfig(config).then(function (response) {
                         if (response.status === 200) {
                           console.log(response.data);
                           setSubcats(
@@ -206,7 +206,7 @@ export function AddSubcat(props) {
         url: process.env.REACT_APP_API_BASE_URL + "/allbrands",
       };
 
-      axios(config).then(function (response) {
+      axiosConfig(config).then(function (response) {
         if (response.status === 200) {
           setConsoleBrands(response.data.Console);
           setMobileBrands(response.data.Mobile);
@@ -232,7 +232,7 @@ export function AddSubcat(props) {
           brand: brand,
         },
       };
-      axios(config).then(function (response) {
+      axiosConfig(config).then(function (response) {
         if (response.status === 200 && response.data.status) {
           props.onAdd(response.data.data);
         }
@@ -403,7 +403,7 @@ function EditSubcat(props) {
       data: { id: props.subcat._id, subcat: subcategory },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         props.onUpdate(response.data);
       }

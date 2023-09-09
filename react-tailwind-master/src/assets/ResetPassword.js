@@ -2,8 +2,7 @@ import React from "react";
 import { useState } from "react";
 import Footer from "./Footer";
 import Header from "./Header";
-import axios from "axios";
-import { useParams } from "react-router-dom";
+import axiosConfig from "./axiosConfig";
 
 export default function ResetPassword() {
   const search = window.location.search;
@@ -81,7 +80,7 @@ export default function ResetPassword() {
                     data: { id: id, password: password1 },
                   };
 
-                  axios(config).then((response) => {
+                  axiosConfig(config).then((response) => {
                     if (response.status === 200) {
                       alert(response.msg);
                       window.location = "/login";

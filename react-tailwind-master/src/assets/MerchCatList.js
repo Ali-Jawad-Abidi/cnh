@@ -1,6 +1,5 @@
-import axios from "axios";
+import axiosConfig from "./axiosConfig";
 import { useEffect, useState } from "react";
-import Compressor from "compressorjs";
 import React from "react";
 
 export default function MerchCatList(props) {
@@ -12,7 +11,7 @@ export default function MerchCatList(props) {
       method: "get",
       url: process.env.REACT_APP_API_BASE_URL + "/getmerchcats",
     };
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         console.log(response.data);
         setMerchCats(response.data);
@@ -110,7 +109,7 @@ export default function MerchCatList(props) {
                         process.env.REACT_APP_API_BASE_URL + "/removemerchcat",
                       params: { id: product._id },
                     };
-                    axios(config).then(function (response) {
+                    axiosConfig(config).then(function (response) {
                       console.log(response);
                       if (response.status === 200) {
                         setMerchCats(
@@ -152,7 +151,7 @@ function EditMerchCat(props) {
       params: { id: props.item._id, name: title },
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       if (response.status === 200) {
         console.log(response.data.result);
         props.onUpdate(response.data.result);
@@ -261,7 +260,7 @@ function AddMerch(props) {
       params: newMerch,
     };
 
-    axios(config).then(function (response) {
+    axiosConfig(config).then(function (response) {
       newMerch._id = response.data;
       props.onAdd(newMerch);
     });

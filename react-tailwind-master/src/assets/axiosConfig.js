@@ -1,10 +1,49 @@
 import axios from "axios";
-// Axios interceptor to attach the access token to every request
-axios.interceptors.request.use(
-  (config) => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (accessToken) {
-      config.headers["Authorization"] = `Bearer ${accessToken}`;
+
+const axiosInstance = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL,
+});
+
+let isRefreshing = false;
+let refreshRequestQueue = [];
+
+// Function to refresh the access token
+const refreshToken = async () => {
+  // Implement logic to request a new access token using the refresh token
+  // This will depend on your authentication system
+  // For example:
+  const response = await axios.post("/api/refresh", {
+    refreshToken: JSON.parse(localStorage.getItem("refreshToken")),
+  });
+  return response.data.accessToken;
+};
+
+// Axios request interceptor to check and refresh access token if expired
+axiosInstance.interceptors.request.use(
+  async (config) => {
+    if (!hasAccessToken()) {
+      return config;
+    }
+    if (isAccessTokenExpired()) {
+      if (isRefreshing) {
+        const retryOriginalRequest = new Promise((resolve) => {
+          refreshRequestQueue.push((newAccessToken) => {
+            localStorage.setItem("token", newAccessToken);
+            resolve(axios(config));
+          });
+        });
+        return retryOriginalRequest;
+      }
+
+      isRefreshing = true;
+      const newAccessToken = await refreshToken();
+      localStorage.setItem("token", JSON.stringify(newAccessToken));
+
+      isRefreshing = false;
+      refreshRequestQueue.forEach((resolveOriginalRequest) => {
+        resolveOriginalRequest(newAccessToken);
+      });
+      refreshRequestQueue = [];
     }
     return config;
   },
@@ -12,16 +51,64 @@ axios.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+// Function to check if access token is expired (implement your own logic)
+const isAccessTokenExpired = () => {
+  // Implement your logic to check if the access token is expired
+  // You might compare the token's expiration date with the current time
+  // Return true if it's expired, otherwise false
 
-// Axios interceptor to handle token expiration
-axios.interceptors.response.use(
+  // Get the current time on the frontend
+  const currentTime = new Date().getTime();
+
+  // Calculate the difference in milliseconds
+  const timeDifferenceMillis =
+    currentTime - JSON.parse(localStorage.getItem("token")).assignedAt;
+
+  // Convert milliseconds to minutes
+  const timeDifferenceMinutes = Math.floor(timeDifferenceMillis / (1000 * 60));
+  if (timeDifferenceMinutes > 30) {
+    return true;
+  }
+  return false;
+};
+
+// Function to check if an access token exists
+const hasAccessToken = () => {
+  // Implement your logic to check if an access token exists
+  // For example, check if it's stored in a cookie, local storage, or a state variable
+  // Return true if it exists, otherwise false
+
+  if ("token" in localStorage && "refreshToken" in localStorage) {
+    return true;
+  }
+  return false;
+};
+
+// Axios response interceptor to handle responses
+axiosInstance.interceptors.response.use(
   (response) => {
+    // You can add any response handling logic here, such as logging or transformation
     return response;
   },
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      // Token expired or invalid, handle token refresh or re-authentication
+  async (error) => {
+    // Handle error responses here, you can also check for specific error codes and take action
+
+    if (error.response.status === 401) {
+      // Handle 401 Unauthorized error
+      // Example: Redirect to the login page or clear tokens
+      // Example: window.location.href = "/login"; or localStorage.removeItem("token");
+      alert("Your login has expired please login again!");
+      window.location.href = "/logout";
+    } else if (error.response.status === 404) {
+      // Handle 404 Not Found error
+      // Example: Show a not found page or perform other actions
+      // Example: window.location.href = "/not-found"; or alert("Resource not found");
+      alert("Your login has expired please login again!");
+      window.location.href = "/logout";
     }
+
     return Promise.reject(error);
   }
 );
+
+export default axiosInstance;
