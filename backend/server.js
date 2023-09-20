@@ -17,6 +17,7 @@ const orderModel = require("./schemae/ordersSchema.js");
 const MerchCatModel = require("./schemae/MerchCatSchema.js");
 const RequestsModel = require("./schemae/userrequestsSchema.js");
 const cartModel = require("./schemae/cartSchema.js");
+const ServiceModel = require("./schemae/serviceSchema.js");
 var bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
 var jwt = require("jsonwebtoken");
@@ -38,7 +39,51 @@ const qrcode = require("qrcode");
 const { promises } = require("dns");
 
 const JWT_SECRET = "shhhhhhhhhhhh1111";
-var conversionRate = 2;
+var conversionRate = 100;
+var tokensQueue = {};
+
+// Specify the file path
+const conversionRatefilePath = path.join(process.cwd(), "conversionRate.txt");
+
+// Read the file contents asynchronously
+fs.readFile(conversionRatefilePath, "utf8", (err, data) => {
+  if (err) {
+    console.error(err);
+    return;
+  }
+
+  // Parse the data as an integer
+
+  // Check if parsing was successful
+  if (!isNaN(parseInt(data))) {
+    conversionRate = parseInt(data);
+  } else {
+    console.error("File does not contain a valid integer value.");
+  }
+});
+
+function updateCoversionRate(numberToWrite) {
+  // Convert the number to a string
+  const dataToWrite = numberToWrite.toString();
+  const conversionRatefilePath = path.join(process.cwd(), "conversionRate.txt");
+
+  fs.truncate(conversionRatefilePath, 0, (err) => {
+    if (err) {
+      console.error(err);
+      return;
+    }
+
+    // Write the data to the file, overwriting its contents
+    fs.writeFile(conversionRatefilePath, dataToWrite, (err) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      console.log(`Successfully wrote ${dataToWrite} to the file.`);
+    });
+  });
+}
+
 var bitsAward = {
   "Correcting a mistake": 1,
   "Adding a new console to the website": 5,
@@ -48,6 +93,40 @@ var bitsAward = {
   "Wearing cnh merch": 50,
   "Shared something brand new": 500,
 };
+
+const bitsAwardsFilePath = path.join(process.cwd(), "bitsAwards.txt");
+try {
+  const fileContent = fs.readFileSync(bitsAwardsFilePath, "utf8");
+
+  // Parse the JSON content into an object
+  bitsAward = JSON.parse(fileContent);
+} catch (err) {
+  console.error(err);
+}
+
+function updateAwards(dataObject) {
+  // Convert the object to a JSON string
+  const jsonData = JSON.stringify(dataObject);
+  console.log(jsonData);
+  console.log(dataObject);
+
+  // Clear the file's contents
+  fs.truncate(bitsAwardsFilePath, 0, (err) => {
+    if (err) {
+      console.error(err);
+      return;
+    }
+
+    // Write the JSON data to the file
+    fs.writeFile(bitsAwardsFilePath, jsonData, (err) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      console.log(`Data has been written to ${filePath}`);
+    });
+  });
+}
 
 function verifyWebhook(hmacSignature, payload) {
   const secret =
@@ -153,6 +232,16 @@ userModel.find(
       });
   }
 );
+
+function calculatePrice(product, bitsSpent) {
+  var price = 0;
+  price = product.price;
+  //- product.discount * (product.price / 100);
+  if (bitsSpent) {
+    price = price - bitsSpent / conversionRate;
+  }
+  return price;
+}
 
 app.get("/api/uploads", (req, res) => {
   RequestsModel.find({ BitsStatus: "Pending" }, function (err, result) {
@@ -1070,31 +1159,65 @@ app.post("/api/editbits", (req, res) => {
   }
 });
 
-app.post("/api/isadmin", (req, res) => {
-  if (req.body.id && req.body.token) {
-    const users = userModel.find({ _id: req.body.id }, (err, u) => {
-      if (err) {
-        res.status(200).send(false);
-      } else if (u.length > 0) {
-        if (u[0].authenticationtype === "Admin") {
-          // console.log(req.body.token);
-          tokenModel.find({ accessToken: req.body.token }, (Err, data) => {
-            if (Err) {
-              console.log(Err);
-              res.status(200).send(false);
-            } else if (data.length > 0) {
-              res.status(200).send(true);
-            }
-          });
-        } else {
-          res.status(200).send(false);
-        }
-      } else {
-        res.status(200).send(false);
-      }
-    });
-  } else {
-    res.status(200).send(false);
+// app.post("/api/isadmin", (req, res) => {
+//   if (req.body.id && req.body.token) {
+//     const users = userModel.find({ _id: req.body.id }, (err, u) => {
+//       if (err) {
+//         res.status(200).send(false);
+//       } else if (u.length > 0) {
+//         if (u[0].authenticationtype === "Admin") {
+//           // console.log(req.body.token);
+//           tokenModel.find({ accessToken: req.body.token }, (Err, data) => {
+//             if (Err) {
+//               console.log(Err);
+//               res.status(200).send(false);
+//             } else if (data.length > 0) {
+//               res.status(200).send(true);
+//             }
+//           });
+//         } else {
+//           res.status(200).send(false);
+//         }
+//       } else {
+//         res.status(200).send(false);
+//       }
+//     });
+//   } else {
+//     res.status(200).send(false);
+//   }
+// });
+
+app.post("/api/isadmin", async (req, res) => {
+  try {
+    if (!req.body.id || !req.body.token) {
+      return res.status(400).send(false); // Bad Request
+    }
+
+    const user = await userModel.findOne({ _id: req.body.id }).exec();
+    if (!user) {
+      return res.status(400).send(false); // User not found
+    }
+
+    if (user.authenticationtype !== "Admin") {
+      return res.status(403).send(false); // Forbidden, not an admin
+    }
+
+    const token = await tokenModel
+      .findOne({ accessToken: req.body.token })
+      .exec();
+    if (!token) {
+      return res.status(401).send(false); // Unauthorized, token not found
+    }
+
+    // Compare the provided token with the stored token
+    if (token.accessToken !== req.body.token) {
+      return res.status(401).send(false); // Unauthorized, token mismatch
+    }
+
+    return res.status(200).send(true); // User is an admin
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(false); // Internal Server Error
   }
 });
 
@@ -1309,6 +1432,7 @@ app.get("/api/addAward", (req, res) => {
 
   if (key && value && !isNaN(parseInt(value)) && isFinite(value)) {
     bitsAward[key] = parseInt(value);
+    updateAwards(bitsAward);
     res.status(200).send(bitsAward);
   } else {
     res
@@ -1326,6 +1450,7 @@ app.get("/api/editAward", (req, res) => {
   if (key && value) {
     if (bitsAward.hasOwnProperty(key)) {
       bitsAward[key] = parseInt(value);
+      updateAwards(bitsAward);
       res.status(200).send(bitsAward);
     } else {
       res.status(404).send("Key not found.");
@@ -1345,6 +1470,7 @@ app.get("/api/removeAward", (req, res) => {
     if (bitsAward.hasOwnProperty(key)) {
       delete bitsAward[key];
       res.status(200).send(bitsAward);
+      updateAwards(bitsAward);
     } else {
       res.status(404).send("Key not found.");
     }
@@ -1996,6 +2122,7 @@ app.get("/api/conversionRate", (req, res) => {
 app.post("/api/setConversionRate", (req, res) => {
   if (req.body.conversionRate) {
     conversionRate = req.body.conversionRate;
+    updateCoversionRate(conversionRate);
     res.status(200).send(conversionRate);
   } else res.status(400).send("Error");
 });
@@ -2444,7 +2571,7 @@ async function sendEmail(data, accessToken, refreshToken) {
     from: "computernostalgiaheaven@gmail.com",
     to: data.email,
     subject: "Email Verification",
-    text: `Click the below link to verify your email\nhttps://thecnh.co.uk:3000/verify/?_id=${data._id}&accessToken=${accessToken}&refreshToken=${refreshToken}`,
+    text: `Click the below link to verify your email\nhttps://thecnh.co.uk/verify/?_id=${data._id}&accessToken=${accessToken}&refreshToken=${refreshToken}`,
   };
 
   try {
@@ -2482,19 +2609,37 @@ async function generateQRCode(data, qrCodeOptions) {
   });
 }
 function generateTokens(user) {
-  const accessToken = jwt.sign({ userId: user._id }, JWT_SECRET, {
-    expiresIn: "30m",
-  });
+  const accessToken = jwt.sign(
+    {
+      userId: user.id,
+      timestamp: Date.now(), // Include the current timestamp
+    },
+    JWT_SECRET
+  );
 
-  const refreshToken = jwt.sign({ userId: user._id }, JWT_SECRET, {
-    expiresIn: "7d",
-  });
+  const refreshToken = jwt.sign(
+    {
+      userId: user.id,
+      timestamp: Date.now() + 30 * 60000,
+    },
+    JWT_SECRET
+  );
 
   return { accessToken, refreshToken };
 }
 
 async function HandleAuth(data, res, isSignUp) {
   try {
+    // Use the deleteMany method to remove documents based on the query
+    // await tokenModel.deleteMany({ userid: data.id }, (err) => {
+    //   if (err) {
+    //     console.error("Error deleting documents:", err);
+    //   } else {
+    //     console.log(
+    //       "Documents with the specified user value deleted successfully."
+    //     );
+    //   }
+    // });
     // Generate both access and refresh tokens using the generateTokens function
     const { accessToken, refreshToken } = generateTokens(data);
 
@@ -2506,7 +2651,10 @@ async function HandleAuth(data, res, isSignUp) {
       userid: data._id,
     });
 
-    token.save();
+    await token.save();
+    // tokensQueue[data.id] = token;
+
+    // await token.save();
 
     const qrCodeOptions = {
       name: "The CNH Secret Key",
@@ -2538,7 +2686,7 @@ async function HandleAuth(data, res, isSignUp) {
       });
     } else {
       const codeString = await generateQRCode(data, qrCodeOptions);
-      console.log(codeString);
+
       res.status(200).json({
         message: "Login Successful.",
         accessToken: { token: accessToken, assignedAt: new Date().getTime() },
@@ -2562,30 +2710,45 @@ async function HandleAuth(data, res, isSignUp) {
 
 app.post("/api/refresh", async (req, res) => {
   const { refreshToken } = req.body;
-
-  console.log(refreshToken);
+  console.log(req.body);
 
   if (!refreshToken) {
+    console.error("Error refreshing token3:", error);
     return res.status(400).json({ message: "Refresh token is required" });
   }
 
   try {
-    const tokens = await tokenModel.find({});
-    console.log(tokens);
     // Verify the refresh token against your database
     const existingToken = await tokenModel.findOne({
       refreshToken: refreshToken.token,
     });
 
+    console.log("existingToken:" + existingToken);
+
     if (!existingToken) {
+      console.error("Error refreshing token1:", error);
+      // const query = { userid: req.body.userid };
+
+      // Use the deleteMany method to remove documents based on the query
+      // await tokenModel.deleteMany(query, (err) => {
+      //   if (err) {
+      //     console.error("Error deleting documents:", err);
+      //   } else {
+      //     console.log(
+      //       "Documents with the specified user value deleted successfully."
+      //     );
+      //   }
+      // });
       return res.status(401).json({ message: "Invalid refresh token" });
     }
 
     // If the refresh token is valid, generate a new access token
     const newAccessToken = jwt.sign(
-      { userId: existingToken.userId },
-      ACCESS_TOKEN_SECRET,
-      { expiresIn: "30m" } // Set the expiration time for the new access token
+      {
+        userId: existingToken.userId,
+        timestamp: Date.now(), // Include the current timestamp
+      },
+      JWT_SECRET
     );
 
     existingToken.accessToken = newAccessToken;
@@ -2593,9 +2756,9 @@ app.post("/api/refresh", async (req, res) => {
 
     return res
       .status(200)
-      .json({ accessToken: newAccessToken, assignedAt: new Date().getTime() });
+      .json({ token: newAccessToken, assignedAt: new Date().getTime() });
   } catch (error) {
-    console.error("Error refreshing token:", error);
+    console.error("Error refreshing token2:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -2624,6 +2787,12 @@ app.post("/api/verify", async (req, res) => {
       window: 1, // Allow tokens to be valid for a short time before and after the current time
     });
 
+    if (verified) {
+      // if (tokensQueue.hasOwnProperty(userid)) {
+      //   tokensQueue[userid].save();
+      // }
+    }
+
     res.status(200).json({ valid: verified });
   } catch (error) {
     console.error("Error verifying 2FA token:", error.message);
@@ -2641,7 +2810,8 @@ app.post("/api/getCartLength", async (req, res) => {
   if (!cart) {
     return res.status(404).send("Not Found");
   }
-  const expiryTime = new Date(Date.now() + 30 * 60 * 1000);
+  const expiryTime = new Date().getTime() + 10 * 60000;
+
   cart.expiryTime = expiryTime;
   await cart.save();
   if (!cart) {
@@ -2651,22 +2821,105 @@ app.post("/api/getCartLength", async (req, res) => {
   res.status(200).send(JSON.stringify(cart.items.length));
 });
 
+// app.post("/api/logout", async (req, res) => {
+//   if (req.body.accessToken && req.body.id) {
+//     try {
+//       const cartsToDelete = await cartModel.find({ user: req.body.id });
+//       if (!cartsToDelete) {
+//         console.log("No carts found for this user");
+//       } else {
+//         for (const cart of cartsToDelete) {
+//           for (const item of cart.items) {
+//             const product = await merchModel.findOne({ _id: item.id });
+//             if (!product) {
+//             } else if (product.category !== "Services") {
+//               product.quantity = product.quantity + 1;
+//               await product.save();
+//             }
+//             if (item.bitsSpent) {
+//               const user = await userModel.findOne({ _id: cart.user });
+//               if (!user) {
+//               } else {
+//                 user.wallet.bits = user.wallet.bits + item.bitsSpent;
+//                 await user.save();
+//               }
+//             }
+//           }
+//         }
+//         // Delete the carts after processing
+//         await cartModel.deleteMany({
+//           _id: { $in: cartsToDelete.map((cart) => cart._id) },
+//         });
+//         console.log(`Deleted ${result.deletedCount} cart(s).`);
+//       }
+//     } catch (error) {
+//       console.error("Error deleting carts:", error);
+//     }
+//     tokenModel.deleteMany({ userid: req.body.id }, (err, result) => {
+//       if (err) {
+//         res.status(400).send("Error Deleting Token");
+//       } else {
+//         res.status(200).send("Token Deleted Successfully");
+//       }
+//     });
+//   } else {
+//     res.status(200).send("Logged out Successfully");
+//   }
+// });
+
 app.post("/api/logout", async (req, res) => {
-  // console.log(req.query);
   if (req.body.accessToken && req.body.id) {
-    const cart = await cartModel.deleteOne({ user: req.body.id });
-    tokenModel.deleteOne(
-      { accessToken: req.body.accessToken },
-      (err, result) => {
-        if (err) {
-          res.status(400).send("Error Deleting Token");
-        } else {
-          res.status(200).send("Token Deleted Successfully");
+    try {
+      const cartsToDelete = await cartModel.find({ user: req.body.id });
+
+      if (cartsToDelete.length === 0) {
+        console.log("No carts found for this user");
+      } else {
+        for (const cart of cartsToDelete) {
+          for (const item of cart.items) {
+            const product = await merchModel.findOne({ _id: item.id });
+
+            if (product) {
+              product.quantity = product.quantity + item.quantity;
+              await product.save();
+            }
+
+            if (item.bitsSpent) {
+              const user = await userModel.findOne({ _id: cart.user });
+
+              if (user) {
+                user.wallet.bits = user.wallet.bits + item.bitsSpent;
+                await user.save();
+              }
+            }
+          }
         }
+
+        // Delete the carts after processing
+        const deleteResult = await cartModel.deleteMany({
+          _id: { $in: cartsToDelete.map((cart) => cart._id) },
+        });
+        console.log(`Deleted ${deleteResult.deletedCount} cart(s).`);
       }
-    );
+    } catch (error) {
+      console.error("Error deleting carts:", error);
+    }
+
+    try {
+      const deleteTokenResult = await tokenModel.deleteMany({
+        userid: req.body.id,
+      });
+      if (deleteTokenResult.deletedCount > 0) {
+        res.status(200).send("Token(s) Deleted Successfully");
+      } else {
+        res.status(400).send("No Tokens Found for Deletion");
+      }
+    } catch (error) {
+      console.error("Error deleting tokens:", error);
+      res.status(400).send("Error Deleting Tokens");
+    }
   } else {
-    res.status(200).send("Logged out Successfully");
+    res.status(400).send("Invalid Request");
   }
 });
 
@@ -3142,44 +3395,114 @@ app.get("/api/getcomments", (req, response) => {
   }
 });
 
-app.post("/api/getmerch", (req, res) => {
-  if (req.body.id) {
-    merchModel.find({ _id: req.body.id }, (err, data) => {
-      if (err) {
-        console.log(err);
-        res.status(404).json({ msg: err, items: [] });
-      } else {
-        res.status(200).json({ msg: "Success", items: data[0], isEnd: false });
-      }
-    });
-  } else {
-    merchModel.find({ quantity: { $gt: 0 } }, (err, data) => {
-      if (err) {
-        console.log(err);
-        res.status(404).json({ msg: err, items: [] });
-      } else {
-        var isEnd = req.body.start + 8 > data.length ? true : false;
-        var arr = data.slice(req.body.start, req.body.start + 8);
+// app.post("/api/getmerch", (req, res) => {
+//   if (req.body.id) {
+//     merchModel.find({ _id: req.body.id }, (err, data) => {
+//       if (err) {
+//         console.log(err);
+//         res.status(404).json({ msg: err, items: [] });
+//       } else {
+//         res.status(200).json({ msg: "Success", items: data[0], isEnd: false });
+//       }
+//     });
+//   } else {
+//     merchModel.find({ quantity: { $gt: 0 } }, (err, data) => {
+//       if (err) {
+//         console.log(err);
+//         res.status(404).json({ msg: err, items: [] });
+//       } else {
+//         var isEnd = req.body.start + 30 > data.length ? true : false;
+//         var arr = data.slice(req.body.start, req.body.start + 30);
 
-        var toSend = [];
-        arr.map((val, index) => {
-          var value = {
-            _id: val._id,
-            title: val.title,
-            thumbnail: val.thumbnail,
-            price: val.price,
-            discount: val.discount,
-            category: val.category,
-            description: val.description,
-            quantity: val.quantity,
-            bits: val.bits,
-            bitsLimit: val.bitsLimit,
-          };
-          toSend.push(value);
-        });
-        res.status(200).json({ msg: "Success", items: toSend, isEnd: isEnd });
+//         var toSend = [];
+//         arr.map((val, index) => {
+//           var value = {
+//             _id: val._id,
+//             title: val.title,
+//             thumbnail: val.thumbnail,
+//             price: val.price,
+//             discount: val.discount,
+//             category: val.category,
+//             // description: val.description,
+//             // quantity: val.quantity,
+//             bits: val.bits,
+//             bitsLimit: val.bitsLimit,
+//           };
+//           toSend.push(value);
+//         });
+//         res.status(200).json({ msg: "Success", items: toSend, isEnd: isEnd });
+//       }
+//     });
+//   }
+// });
+
+app.post("/api/getmerch", async (req, res) => {
+  try {
+    let query = merchModel.find();
+
+    if (req.body.id) {
+      // If an ID is provided, retrieve a single item by ID with quantity greater than 0
+      query
+        .where("_id")
+        .equals(req.body.id)
+        .where({ quantity: { $gt: 0 } });
+      const data = await query.exec();
+
+      if (data.length === 0) {
+        res.status(404).json({ msg: "No items found", items: [], isEnd: true });
+      } else {
+        const isEnd = data.length < 30; // Check if this is the last page
+        const items = data.map((val) => ({
+          _id: val._id,
+          title: val.title,
+          // thumbnail: val.thumbnail,
+          price: val.price,
+          discount: val.discount,
+          category: val.category,
+          bits: val.bits,
+          bitsLimit: val.bitsLimit,
+          images: val.images,
+          quantity: val.quantity,
+        }));
+
+        res.status(200).json({ msg: "Success", items: items, isEnd: isEnd });
       }
-    });
+    } else {
+      query.where({ quantity: { $gt: 0 } });
+
+      // If no ID is provided, retrieve items with quantity greater than 0
+
+      // Apply pagination (start and limit) to the query
+      const start = parseInt(req.body.start || 0);
+      const limit = 30;
+      query.skip(start).limit(limit);
+      const data = await query.exec();
+
+      if (data.length === 0) {
+        res.status(404).json({ msg: "No items found", items: [], isEnd: true });
+      } else {
+        const isEnd = data.length < 30; // Check if this is the last page
+        const items = data.map((val) => ({
+          _id: val._id,
+          title: val.title,
+          thumbnail: val.thumbnail,
+          price: val.price,
+          discount: val.discount,
+          category: val.category,
+          bits: val.bits,
+          bitsLimit: val.bitsLimit,
+          quantity: val.quantity,
+          // images: val.images,
+        }));
+
+        res.status(200).json({ msg: "Success", items: items, isEnd: isEnd });
+      }
+    }
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ msg: "Internal server error", items: [], isEnd: false });
   }
 });
 
@@ -3451,6 +3774,7 @@ const sharpProcessor = (buffer, width, height) => {
 
 app.post("/api/addmerch", (req, res) => {
   var newMerch = new merchModel(req.body);
+
   newMerch.save((err, result) => {
     if (err) {
       console.log(err);
@@ -3601,22 +3925,31 @@ app.post("/api/removeCart", async (req, res) => {
   if (!cart) {
     return res.status(404).send("Cart not found");
   }
+
+  let item = cart.items[indexToRemove];
+  if (item.bitsSpent) {
+    const user = await userModel.findById(cart.user);
+    if (!user) {
+      console.log("User not found");
+    } else {
+      user.wallet.bits = user.wallet.bits + item.bitsSpent;
+      user.save();
+    }
+  }
+
+  const product = await merchModel.findById(item.id);
+  if (!product) {
+    console.log("product not found");
+  } else {
+    product.quantity = product.quantity + 1;
+    product.save();
+  }
   cart.items = await Promise.all(
     cart.items.filter((_, index) => index !== indexToRemove)
   );
   await cart.save();
   res.status(200).send("ok");
 });
-
-function calculatePrice(product, bitsSpent) {
-  var price = 0;
-  price = product.price - product.discount * (product.price / 100);
-  if (bitsSpent) {
-    price = price - product.bitsLimit / conversionRate;
-  }
-
-  return price;
-}
 
 // API to get a cart by ID
 app.post("/api/getCart", async (req, res) => {
@@ -3634,7 +3967,7 @@ app.post("/api/getCart", async (req, res) => {
     }
 
     const toSend = [];
-    const expiryTime = new Date(Date.now() + 30 * 60 * 1000);
+    const expiryTime = new Date().getTime() + 10 * 60000;
 
     for (const item of cart.items) {
       const product = await merchModel.findById(item.id);
@@ -3646,14 +3979,17 @@ app.post("/api/getCart", async (req, res) => {
           price: calculatePrice(product, item.bitsSpent),
           title: product.title,
           color: product.color,
-          quantity: 1,
+          quantity: item.quantity,
         };
 
         toSend.push(newitem);
       }
     }
 
-    const total = toSend.reduce((sum, item) => sum + item.price, 0);
+    const total = toSend.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
 
     cart.expiryTime = expiryTime;
     await cart.save();
@@ -3707,82 +4043,135 @@ app.post("/api/addCart", async (req, res) => {
   if (!req.body.user || !req.body.cart) {
     return res.status(400).send("Bad Request");
   }
+
+  let total = 0;
+  const user = await userModel.findById(req.body.user);
+  if (!user) {
+    return res.status(404).send("User not found");
+  }
+
   if (req.body.cartId && req.body.cartId.length > 1) {
     const order = await cartModel.findById(req.body.cartId);
     if (!order) {
-      return res.status(400).send("Bad Request");
-    }
-
-    for (const item of req.body.cart) {
-      const product = await merchModel.findOne({ _id: item.id });
-      var price = 0;
+      const expiryTime = new Date().getTime() + 10 * 60000;
+      const product = await merchModel.findOne({ _id: req.body.cart.id });
 
       if (product) {
-        price = product.price - product.discount * (product.price / 100);
-        if (item.bitsSpent) {
-          price = price - product.bitsLimit / conversionRate;
-        }
-        order.items.push(item);
-        product.quantity = product.quantity - 1;
-        await product.save();
-        order.total = order.total + price.toFixed(2);
+        let tot = 0;
+        product.quantity = product.quantity - req.body.cart.quantity;
+        tot = product.price - req.body.cart.bitsSpent / conversionRate;
+        tot = tot * parseInt(req.body.cart.quantity);
+        total = total + tot;
+        product.save();
       }
+
+      let totalBitsSpent =
+        req.body.cart.bitsSpent * parseInt(req.body.cart.quantity);
+
+      let newItem = {
+        id: req.body.cart.id,
+        quantity: parseInt(req.body.cart.quantity),
+        bitsSpent: req.body.cart.bitsSpent,
+      };
+      let items = [];
+      items.push(newItem);
+
+      var newOrder = new cartModel({
+        user: req.body.user,
+        items: items,
+        expiryTime: expiryTime,
+        total: total,
+      });
+      await newOrder.save();
+      user.wallet.bits = user.wallet.bits - totalBitsSpent;
+      await user.save();
+      return res.status(200).json({ cartId: newOrder._id });
     }
-    const expiryTime = new Date(Date.now() + 30 * 60 * 1000);
+
+    const product = await merchModel.findOne({ _id: req.body.cart.id });
+    total = order.total;
+    if (product) {
+      let tot = 0;
+      product.quantity = product.quantity - req.body.cart.quantity;
+      tot = product.price - req.body.cart.bitsSpent / conversionRate;
+      tot = tot * parseInt(req.body.cart.quantity);
+      total = total + tot;
+      product.save();
+    }
+
+    let totalBitsSpent =
+      req.body.cart.bitsSpent * parseInt(req.body.cart.quantity);
+
+    let newItem = {
+      id: req.body.cart.id,
+      quantity: parseInt(req.body.cart.quantity),
+      bitsSpent: req.body.cart.bitsSpent,
+    };
+    order.items.push(newItem);
+    order.total = total;
+
+    const expiryTime = new Date().getTime() + 10 * 60000;
     order.expiryTime = expiryTime;
     await order.save();
+    user.wallet.bits = user.wallet.bits - totalBitsSpent;
+    await user.save();
     return res.status(200).json({ cartId: undefined });
   } else {
-    const expiryTime = new Date(Date.now() + 30 * 60 * 1000);
+    const expiryTime = new Date().getTime() + 10 * 60000;
+    const product = await merchModel.findOne({ _id: req.body.cart.id });
 
-    var items = [];
-    var total = 0;
-    for (const item of req.body.cart) {
-      const product = await merchModel.findOne({ _id: item.id });
-      var price = 0;
-
-      if (product) {
-        price = product.price - product.discount * (product.price / 100);
-        if (item.bitsSpent) {
-          price = price - product.bitsLimit / conversionRate;
-        }
-        items.push(item);
-        product.quantity = product.quantity - 1;
-        await product.save();
-        total = total + price.toFixed(2);
-      }
+    if (product) {
+      let tot = 0;
+      product.quantity = product.quantity - req.body.cart.quantity;
+      tot = product.price - req.body.cart.bitsSpent / conversionRate;
+      tot = tot * parseInt(req.body.cart.quantity);
+      total = total + tot;
+      product.save();
     }
+
+    let totalBitsSpent =
+      req.body.cart.bitsSpent * parseInt(req.body.cart.quantity);
+
+    let newItem = {
+      id: req.body.cart.id,
+      quantity: parseInt(req.body.cart.quantity),
+      bitsSpent: req.body.cart.bitsSpent,
+    };
+    let items = [];
+    items.push(newItem);
+
     var newOrder = new cartModel({
       user: req.body.user,
       items: items,
       expiryTime: expiryTime,
       total: total,
     });
+    console.log(newOrder);
     await newOrder.save();
+    user.wallet.bits = user.wallet.bits - totalBitsSpent;
+    await user.save();
     return res.status(200).json({ cartId: newOrder._id });
   }
 });
 
-// Define a cron job to run every hour (adjust the schedule as needed)
 cron.schedule("*/10 * * * *", async () => {
   try {
-    const currentTime = new Date();
+    const currentTime = Date.now(); // Get the current time in milliseconds
 
-    // Find and remove expired carts
     const cartsToDelete = await cartModel.find({
-      expiresAt: { $lt: currentTime },
+      expiryTime: { $lt: currentTime },
     });
 
     for (const cart of cartsToDelete) {
       for (const item of cart.items) {
         const product = await merchModel.findOne({ _id: item.id });
         if (product) {
-          product.quantity = product.quantity + 1;
+          product.quantity = product.quantity + item.quantity;
           await product.save();
         }
         if (item.bitsSpent) {
           const user = await userModel.findOne({ _id: cart.user });
-          user.wallet.bits = user.wallet.bits + product.bitsLimit;
+          user.wallet.bits = user.wallet.bits + item.bitsSpent;
           await user.save();
         }
       }
@@ -3815,23 +4204,25 @@ app.post("/api/getCartTotal", async (req, res) => {
     return res.status(400).send("Bad Request");
   }
   const cart = await cartModel.findById(cartId);
-  const expiryTime = new Date(Date.now() + 30 * 60 * 1000);
+  const expiryTime = new Date().getTime() + 10 * 60000;
+  console.log(cart);
+
   cart.expiryTime = expiryTime;
   await cart.save();
-  let total = 0;
-  let data = await Promise.all(
-    cart.items.map(async (item, index) => {
-      const product = await merchModel.findById(item.id);
-      let price = product.price - product.discount * (product.price / 100);
-      if (item.bitsSpent) {
-        price = price - product.bitsLimit / conversionRate;
-      }
+  // let total = 0;
+  // let data = await Promise.all(
+  //   cart.items.map(async (item, index) => {
+  //     const product = await merchModel.findById(item.id);
+  //     let price = product.price - product.discount * (product.price / 100);
+  //     if (item.bitsSpent) {
+  //       price = price - item.bitsSpent / conversionRate;
+  //     }
 
-      total = total + price;
-    })
-  );
+  //     total = total + price;
+  //   })
+  // );
 
-  res.status(200).json({ total: total });
+  res.status(200).json({ total: cart.total });
 });
 
 app.post("/api/neworder", async (req, res) => {
@@ -3927,6 +4318,66 @@ app.post("/api/editcategory", (req, res) => {
     data[0].save();
     res.status(200).send(data[0]);
   });
+});
+
+app.post("/api/addConsoleService", async (req, res) => {
+  const { console } = req.body;
+  if (!console) {
+    return res.status(400).send("Bad Request");
+  }
+  var newService = new ServiceModel(req.body);
+  await newService.save();
+  res.status(200).send(newService);
+});
+
+app.post("/api/addService", async (req, res) => {
+  const { id, type, service, price } = req.body;
+  if (!id || !type || !service || !price) {
+    return res.status(400).send("Bad Request");
+  }
+
+  const serv = await ServiceModel.findById(id);
+  if (!serv) {
+    res.status(404).send("Console not found");
+  }
+
+  serv[type].push({ name: service, price: price });
+  await serv.save();
+  return res.status(200).send("ok");
+});
+
+app.post("/api/services", async (req, res) => {
+  const { id, token } = req.body;
+  if (!id || !token) {
+    return res.status(400).send("Bad Request");
+  }
+
+  const user = await userModel.findById(id);
+  if (!user) {
+    return res.status(404).send("User not found");
+  }
+
+  if (user.authenticationtype !== "Admin") {
+    console.log("Forbidden1");
+    return res.status(403).send("Forbidden1");
+  }
+
+  const tok = await tokenModel.findOne({ accessToken: token });
+
+  if (!tok) {
+    return res.status(404).send("Not Found");
+  }
+
+  console.log(token);
+  console.log(tok.accessToken);
+
+  if (token === tok.accessToken) {
+    const services = await ServiceModel.find({});
+    return res.status(200).send(services);
+  } else {
+    console.log("Forbidden2");
+    return res.status(403).send("Forbidden2");
+  }
 });
 
 app.post("/api/deleteorder", (req, res) => {

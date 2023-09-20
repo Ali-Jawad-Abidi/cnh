@@ -23,6 +23,7 @@ const MuseumsList = lazy(() => import("./MuseumsList.js"));
 const MerchCatList = lazy(() => import("./MerchCatList.js"));
 const UploadList = lazy(() => import("./UploadsList.js"));
 const SingleImageUpload = lazy(() => import("./SingleImageUpload"));
+const ServiceList = lazy(() => import("./ServiceLists.js"));
 
 export function AddBlog(props) {
   const [showModal, setShowModal] = useState(false);
@@ -867,6 +868,8 @@ function RightPanel(props) {
     return <UploadList />;
   } else if (props.page === "BitScheme") {
     return <BitScheme fullscreen />;
+  } else if (props.page === "Services") {
+    return <ServiceList />;
   }
 }
 
@@ -874,8 +877,11 @@ export default function AdminDashboard() {
   var [isAdmin, setIsAdmin] = useState(0);
 
   var [currentPage, setCurrentPage] = useState("Dashboard");
-  var id = JSON.parse(localStorage.getItem("userid")) || null;
-  var token = JSON.parse(localStorage.getItem("token")).token || null;
+  var id = "userid" ? JSON.parse(localStorage.getItem("userid")) : null;
+  var token =
+    "token" in localStorage
+      ? JSON.parse(localStorage.getItem("token")).token
+      : null;
   useEffect(() => {
     if (id !== null && token !== null) {
       var config = {
@@ -1302,6 +1308,27 @@ export default function AdminDashboard() {
                   <span className="flex-1 ml-3 text-left whitespace-nowrap">
                     Bit Scheme
                   </span>
+                </div>
+              </li>
+              <li>
+                <div
+                  onClick={() => {
+                    setCurrentPage("Services");
+                    displayMenu();
+                  }}
+                  className="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="w-6 h-6 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path>
+                    <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"></path>
+                  </svg>
+                  <span className="ml-3">Services</span>
                 </div>
               </li>
             </ul>

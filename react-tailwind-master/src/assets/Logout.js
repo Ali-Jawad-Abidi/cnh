@@ -6,7 +6,7 @@ export default function Logout() {
     var config = {
       method: "post",
       url: process.env.REACT_APP_API_BASE_URL + "/logout",
-      params: {
+      data: {
         id:
           "userid" in localStorage
             ? JSON.parse(localStorage.getItem("userid"))
@@ -15,8 +15,23 @@ export default function Logout() {
       },
     };
 
-    axios(config).then(function (response) {
-      if (response) {
+    axios(config)
+      .then(function (response) {
+        if (response) {
+          var redirectTo =
+            "redirectTo" in localStorage
+              ? JSON.parse(localStorage.getItem("redirectTo")) ===
+                "xGpAQhWobyTxIPx51LAKKOGnrWZNUtcOImuVUIPdqc="
+                ? "/"
+                : JSON.parse(localStorage.getItem("redirectTo"))
+              : "/";
+
+          localStorage.clear();
+          sessionStorage.clear();
+          window.location = redirectTo;
+        }
+      })
+      .catch((err) => {
         var redirectTo =
           "redirectTo" in localStorage
             ? JSON.parse(localStorage.getItem("redirectTo")) ===
@@ -26,8 +41,8 @@ export default function Logout() {
             : "/";
 
         localStorage.clear();
+        sessionStorage.clear();
         window.location = redirectTo;
-      }
-    });
+      });
   });
 }

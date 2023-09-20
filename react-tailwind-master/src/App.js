@@ -4,10 +4,11 @@ import HomePage from "./assets/HomePage";
 import { Route, Routes } from "react-router";
 import Logout from "./assets/Logout";
 import Loading from "./assets/Loading";
-import LatestConsoles from "./assets/LatestConsoles";
 import VerifyEmail from "./assets/VerifyEmailPage";
-import HtmlParser from "./assets/HtmlParser";
-// import SnakeGame from "./assets/Snake";
+
+const Services = lazy(() => import("./assets/Services"));
+const Service = lazy(() => import("./assets/Service"));
+import TabbedContent from "./assets/TabsCard.js";
 
 const Nostalgiabase = lazy(() => import("./assets/Nostalgiabase"));
 const SigninPage = lazy(() => import("./assets/SigninPage"));
@@ -35,25 +36,9 @@ const BitsLog = lazy(() => import("./assets/BitsLog"));
 // import PopUp from "./assets/PopUp";
 
 export default function App() {
-  // var [html, setHtml] = useState("");
   return (
-    // <ProductProvider>
-    <div className="App bg-white dark:bg-gray-900">
-      {/* <PopUp /> */}
-      {/* <SnakeGame /> */}
-      {/* <WysiwygEditor /> */}
-
-      {/* <div>
-        <input
-          type="text"
-          id="table-search-users"
-          class="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-          placeholder="Search for Uploads"
-          onChange={(e) => setHtml(e.target.value)}
-        />
-        <HtmlParser htmlContent={html} />
-      </div> */}
-
+    <div className="App bg-white dark:bg-gray-900 min-h-screen">
+      {/* <TabbedContent /> */}
       <Suspense fallback={<Loading />}>
         <Routes>
           <Route exact path="/" element={<HomePage page="Home" />} />
@@ -101,6 +86,7 @@ export default function App() {
             path="/productgrid/mobile/:id"
             element={<ListingPage cat="mobile" />}
           />
+
           <Route
             exact
             path="/productgrid"
@@ -147,6 +133,7 @@ export default function App() {
             element={<ListingPage show="latest" />}
           />
           <Route exact path="/verifyEmail" index element={<VerifyEmail />} />
+          <Route exact path="/services" index element={<Services />} />
           <Route exact path="/patreon" index element={<PatreonLinking />} />
           <Route
             exact
@@ -162,6 +149,7 @@ export default function App() {
             element={<ProfilePage />}
           />
           <Route exact path="/bitslog" index element={<HomePage />} />
+          <Route exact path="/service" element={<Service />} />
         </Routes>
       </Suspense>
     </div>

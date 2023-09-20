@@ -150,6 +150,7 @@ export default function EarnBits() {
                             if (res.status === 200) {
                               alert("Request added succesfully");
                               setShowUploadModal(false);
+                              window.location.reload(false);
                             } else {
                               alert("Error: Request could not be added.");
                             }

@@ -96,11 +96,11 @@ export default function BitScheme(props) {
     return (
       <>
         <div className="mb-2">
-          <p className="text-bold text-sm text-left dark:text-white">
-            According to current conversion rate, number of bits in 1 £ are{" "}
-            <span className="font-bold text-xl dark:text-white">
-              {conversionRate}
-            </span>
+          <p className="text-bold text-sm text-center dark:text-white">
+            1 Pound Sterling Equals{" "}
+            <p className="font-bold text-xl text-center dark:text-white">
+              {conversionRate + " bits"}
+            </p>
           </p>
           <div className="flex flex-row justify-between">
             <div className="flex flex-row gap-2">
@@ -376,6 +376,13 @@ export default function BitScheme(props) {
                     </button>
                   </div>
                   <div class="space-y-6">
+                    <p className="text-bold text-sm text-left ml-6 dark:text-white">
+                      According to current conversion rate, number of bits in 1
+                      £ are{" "}
+                      <span className="font-bold text-xl dark:text-white">
+                        {conversionRate}
+                      </span>
+                    </p>
                     <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                       <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>

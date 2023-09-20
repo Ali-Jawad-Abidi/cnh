@@ -170,6 +170,7 @@ export default function Checkout(props) {
 
           // Update the state with the new array
           setCartItems(filteredItems);
+          sessionStorage.setItem("cartLength", filteredItems.length);
         }
       })
       .catch((error) => {
@@ -192,6 +193,7 @@ export default function Checkout(props) {
     axios(config)
       .then((response) => {
         if (response.status === 200) {
+          console.log(response.data);
           setCartItems(response.data.cart);
           setTotal(response.data.total);
           setToPay(parseFloat(response.data.total) + deliveryCost);
@@ -273,13 +275,11 @@ export default function Checkout(props) {
                       {item.title}
                     </span>
                     <span className="float-left text-gray-400 dark:text-white">
-                      £{item.price}
+                      £{item.price} x {item.quantity}
                     </span>
-                    {/* <p className="text-lg font-bold dark:text-white">
-                      £
-                      {item.price.toFixed(2) -
-                        (item.price * item.discount) / 100}
-                    </p> */}
+                    <p className="text-lg font-bold dark:text-white">
+                      £{item.price.toFixed(2) * item.quantity}
+                    </p>
                     <div
                       className="text-blue-700 cursor-pointer"
                       onClick={() => {

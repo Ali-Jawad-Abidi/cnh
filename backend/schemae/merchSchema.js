@@ -21,12 +21,13 @@ const MerchSchema = new mongoose.Schema({
   },
   quantity: {
     type: Number,
-    required: true,
+    default: 0,
   },
   discount: {
     type: Number,
     default: 0,
     required: false,
+    immutable: true, // This makes the field uneditable
   },
   bits: {
     type: Boolean,

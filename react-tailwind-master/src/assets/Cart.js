@@ -9,6 +9,7 @@ export default function Cart(props) {
   const [open, setOpen] = useState(true);
   var [cartItems, setCartItems] = useState([]);
   var [total, setTotal] = useState(0);
+  const [reload, setReload] = useState(false);
 
   useEffect(() => {
     if (
@@ -29,12 +30,15 @@ export default function Cart(props) {
       axios(config)
         .then((response) => {
           if (response.status === 200) {
+            console.log(response.data.cart);
             setCartItems(response.data.cart);
             setTotal(response.data.total);
           }
         })
         .catch((error) => {
           console.log(error.response.data);
+          sessionStorage.removeItem("cartLength");
+          sessionStorage.removeItem("cartID");
         });
     }
   }, []);
@@ -68,6 +72,15 @@ export default function Cart(props) {
 
           // Update the state with the new array
           setCartItems(filteredItems);
+          var oldLength =
+            "cartLength" in sessionStorage
+              ? JSON.parse(sessionStorage.getItem("cartLength"))
+              : 0;
+          let newLength = parseInt(oldLength) - 1;
+          newLength = newLength < 0 ? 0 : newLength;
+          sessionStorage.setItem("cartLength", newLength);
+          const storageChangeEvent = new Event("sessionStorageChange");
+          window.dispatchEvent(storageChangeEvent);
         }
       })
       .catch((error) => {

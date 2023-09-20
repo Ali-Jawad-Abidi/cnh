@@ -73,7 +73,7 @@ export function BlogsGrid(props) {
 
 export default function Blog() {
   var [blogs, setBlogs] = useState([]);
-  var [showMore, setShowMore] = useState(true);
+  var [showMore, setShowMore] = useState(false);
 
   function fetchBlogs() {
     var config = {

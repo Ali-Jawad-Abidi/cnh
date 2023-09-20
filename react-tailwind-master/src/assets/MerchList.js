@@ -24,7 +24,7 @@ export default function ProductList(props) {
     var config = {
       method: "post",
       url: process.env.REACT_APP_API_BASE_URL + "/getmerch",
-      data: { start: products.length },
+      data: { start: products.length, showAll: true },
     };
     axiosConfig(config).then(function (response) {
       if (response.status === 200) {
@@ -188,11 +188,10 @@ export default function ProductList(props) {
 }
 
 function EditMerch(props) {
-  console.log(props.item);
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState(props.item.title);
   const [price, setPrice] = useState(props.item.price);
-  const [discount, setDiscount] = useState(props.item.discount);
+  const [discount, setDiscount] = useState(0);
   const [description, setDescription] = useState(props.item.description);
   const [quantity, setQuantity] = useState(props.item.quantity);
   const [images, setImages] = useState(null);
@@ -200,6 +199,8 @@ function EditMerch(props) {
   const [thumbnail, setThumbnail] = useState("");
   const [bitsLimit, setBitLimits] = useState(props.item.bitsLimit);
   const [imagesHaveChanged, setImagesHaveChanged] = useState(false);
+  const [cat, setCat] = useState(props.item.category);
+  const [cats, setCats] = useState([]);
 
   useEffect(() => {
     var config = {
@@ -217,6 +218,18 @@ function EditMerch(props) {
         setThumbnail([]);
       }
     });
+
+    var config = {
+      url: process.env.REACT_APP_API_BASE_URL + "/getmerchcats",
+      method: "get",
+    };
+    axiosConfig(config).then((response) => {
+      if (response.status === 200) {
+        setCats(response.data);
+      } else {
+        setCats([]);
+      }
+    });
   }, [props._id]);
 
   function onSubmit(e) {
@@ -230,6 +243,7 @@ function EditMerch(props) {
     newMerch.quantity = quantity;
     newMerch.bits = bits;
     newMerch.bitsLimit = bitsLimit;
+    newMerch.category = cat;
 
     if (imagesHaveChanged) {
       newMerch.images = images;
@@ -249,7 +263,7 @@ function EditMerch(props) {
     });
   }
   return (
-    <>
+    <div>
       <button
         onClick={() => setShowModal(true)}
         className="bg-blue-600 rounded-lg text-white px-3 py-2"
@@ -257,221 +271,244 @@ function EditMerch(props) {
         Edit
       </button>
       {showModal && (
-        <div
-          id="authentication-modal"
-          tabIndex="-1"
-          className="fixed z-40 inset-0 flex items-center justify-center w-full p-4 backdrop-blur overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] md:h-full"
-        >
-          <div className="relative w-full h-full max-w-md md:h-auto">
-            <div className="relative bg-white rounded-lg shadow dark:bg-gray-700">
-              <button
-                type="button"
-                className="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-800 dark:hover:text-white"
-                data-modal-hide="authentication-modal"
-                onClick={() => {
-                  setShowModal(false);
-                }}
-              >
-                <svg
-                  aria-hidden="true"
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  xmlns="http://www.w3.org/2000/svg"
+        <div className="h-full overflow-y-scroll">
+          <div
+            id="authentication-modal"
+            tabIndex="-1"
+            className="fixed z-40 inset-0 h-full flex items-center justify-center w-full p-4 backdrop-blur overflow-x-hidden overflow-y-scroll max-h-[95vh] md:inset-0 md:h-full"
+          >
+            <div className="relative mt-40 w-full h-full max-w-[50vw] md:h-auto">
+              <div className="relative bg-white rounded-lg shadow dark:bg-gray-700">
+                <button
+                  type="button"
+                  className="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-800 dark:hover:text-white"
+                  data-modal-hide="authentication-modal"
+                  onClick={() => {
+                    setShowModal(false);
+                  }}
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  ></path>
-                </svg>
-                <span className="sr-only">Close modal</span>
-              </button>
-              <div className="px-6 py-6 lg:px-8">
-                <h3 className="mb-4 text-xl font-medium text-gray-900 dark:text-white">
-                  Edit Product
-                </h3>
-                <div
-                // className=" relative flex flex-row mb-2 mx-auto items-center "
-                >
-                  <ImageGrid
-                    images={images}
-                    setImages={setImages}
-                    setImagesHaveChanged={setImagesHaveChanged}
-                    setThumbnail={setThumbnail}
-                  />
-                </div>
-                <form className="space-y-2" action="#">
-                  <div>
-                    <label
-                      for="helper-text"
-                      class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Title
-                    </label>
-                    <input
-                      type="text"
-                      name="title"
-                      id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                      placeholder="Title"
-                      required
-                      value={title}
-                      maxlength="30"
-                      onChange={(e) => {
-                        setTitle(e.target.value);
-                      }}
+                  <svg
+                    aria-hidden="true"
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    ></path>
+                  </svg>
+                  <span className="sr-only">Close modal</span>
+                </button>
+                <div className="px-6 py-6 lg:px-8">
+                  <h3 className="mb-4 text-xl font-medium text-gray-900 dark:text-white">
+                    Edit Product
+                  </h3>
+                  <div
+                  // className=" relative flex flex-row mb-2 mx-auto items-center "
+                  >
+                    <ImageGrid
+                      images={images}
+                      setImages={setImages}
+                      setImagesHaveChanged={setImagesHaveChanged}
+                      setThumbnail={setThumbnail}
                     />
                   </div>
-
-                  <div className="flex flex-row gap-2">
-                    <div className="w-full">
+                  <form className="space-y-2" action="#">
+                    <div>
                       <label
                         for="helper-text"
                         class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                       >
-                        Price
+                        Title
                       </label>
                       <input
-                        type="Number"
-                        name="price"
+                        type="text"
+                        name="title"
                         id="email"
                         className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                        placeholder="Price"
+                        placeholder="Title"
                         required
-                        value={price}
+                        value={title}
+                        maxlength="30"
                         onChange={(e) => {
-                          setPrice(e.target.value);
-                        }}
-                      />
-                    </div>
-                    <div className="w-full">
-                      <label
-                        for="helper-text"
-                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                      >
-                        Bits Limit max: (
-                        {(price - (price * discount) / 100) *
-                          props.conversionRate}
-                        )
-                      </label>
-                      <input
-                        type="Number"
-                        name="price"
-                        id="email"
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                        value={parseInt(bitsLimit)}
-                        required
-                        min={0}
-                        max={price * props.conversionRate}
-                        onChange={(e) => {
-                          if (
-                            e.target.value <=
-                              (price - (price * discount) / 100) *
-                                props.conversionRate &&
-                            e.target.value >= 0
-                          ) {
-                            setBitLimits(e.target.value);
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-row">
-                    <div className="mr-1">
-                      <label
-                        for="helper-text"
-                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                      >
-                        Quantity
-                      </label>
-                      <input
-                        type="Number"
-                        name="discount"
-                        id="email"
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                        placeholder="Quantity"
-                        required
-                        value={quantity}
-                        onChange={(e) => {
-                          setQuantity(e.target.value);
+                          setTitle(e.target.value);
                         }}
                       />
                     </div>
 
-                    <div className="ml-1">
-                      <label
-                        for="helper-text"
-                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                      >
-                        Discount
-                      </label>
-                      <input
-                        type="Number"
-                        name="discount"
-                        id="email"
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                        placeholder="Discount"
-                        required
-                        value={discount}
-                        onChange={(e) => {
-                          setDiscount(e.target.value);
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-between">
-                    <div className="flex items-start">
-                      <div className="flex items-center h-4">
+                    <div className="flex flex-row gap-2">
+                      <div className="w-full">
+                        <label
+                          for="helper-text"
+                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                        >
+                          Price
+                        </label>
                         <input
-                          id="remember"
-                          type="checkbox"
-                          className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
+                          type="Number"
+                          name="price"
+                          id="email"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                          placeholder="Price"
                           required
-                          checked={bits}
+                          value={price}
                           onChange={(e) => {
-                            setBits(e.target.checked);
+                            setPrice(e.target.value);
                           }}
                         />
                       </div>
-                      <label
-                        for="remember"
-                        className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-                      >
-                        Can be bought with bits
-                      </label>
+                      <div className="w-full">
+                        <label
+                          for="helper-text"
+                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                        >
+                          Bits Limit max: ({price * props.conversionRate})
+                        </label>
+                        <input
+                          type="Number"
+                          name="price"
+                          id="email"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                          value={parseInt(bitsLimit)}
+                          required
+                          min={0}
+                          max={price * props.conversionRate}
+                          onChange={(e) => {
+                            if (
+                              e.target.value <= price * props.conversionRate &&
+                              e.target.value >= 0
+                            ) {
+                              setBitLimits(e.target.value);
+                            }
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label
-                      for="helper-text"
-                      class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Description
-                    </label>
-                    <WysiwygEditor
-                      text={description}
-                      setText={setDescription}
-                    />
-                  </div>
-                  <div>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        onSubmit(e);
-                      }}
-                      className="w-full ml-1 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                    >
-                      Update
-                    </button>
-                  </div>
-                </form>
+                    <div className="flex flex-row">
+                      <div className="mr-1">
+                        <label
+                          for="helper-text"
+                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                        >
+                          Quantity
+                        </label>
+                        <input
+                          type="Number"
+                          name="discount"
+                          id="email"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                          placeholder="Quantity"
+                          required
+                          value={quantity}
+                          onChange={(e) => {
+                            setQuantity(e.target.value);
+                          }}
+                        />
+                      </div>
+
+                      {/* <div className="ml-1">
+                        <label
+                          for="helper-text"
+                          class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                        >
+                          Discount
+                        </label>
+                        <input
+                          type="Number"
+                          name="discount"
+                          id="email"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                          placeholder="Discount"
+                          required
+                          value={discount}
+                          onChange={(e) => {
+                            if (e.target.value >= 0 && e.target.value <= 100)
+                              setDiscount(e.target.value);
+                          }}
+                        />
+                      </div> */}
+
+                      <div className="ml-1 w-full">
+                        <label
+                          for="helper-text"
+                          class="block text-sm mb-2 text-left font-medium text-gray-900 dark:text-white"
+                        >
+                          Category
+                        </label>
+                        <select
+                          id="cats"
+                          required
+                          onChange={(e) => {
+                            setCat(e.target.value);
+                          }}
+                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        >
+                          <option value="">Select Category</option>
+                          <option value={"No Category"}>{"No Category"}</option>
+                          {cats.map((c, index) => (
+                            <option index={index} value={c.name}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex justify-between">
+                      <div className="flex items-start">
+                        <div className="flex items-center h-4">
+                          <input
+                            id="remember"
+                            type="checkbox"
+                            className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
+                            required
+                            checked={bits}
+                            onChange={(e) => {
+                              setBits(e.target.checked);
+                            }}
+                          />
+                        </div>
+                        <label
+                          for="remember"
+                          className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                        >
+                          Can be bought with bits
+                        </label>
+                      </div>
+                    </div>
+                    <div>
+                      <label
+                        for="helper-text"
+                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >
+                        Description
+                      </label>
+                      <WysiwygEditor
+                        text={description}
+                        setText={setDescription}
+                      />
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          onSubmit(e);
+                        }}
+                        className="w-full ml-1 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                      >
+                        Update
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -479,9 +516,9 @@ function AddMerch(props) {
   var [showModal, setShowModal] = useState(false);
   var [title, setTitle] = useState("");
   var [price, setPrice] = useState("");
-  var [discount, setDiscount] = useState("");
+  var [discount, setDiscount] = useState(0);
   var [description, setDescription] = useState("");
-  var [quantity, setQuantity] = useState("");
+  var [quantity, setQuantity] = useState(0);
   var [images, setImages] = useState([]);
   var [thumbnail, setThumbnail] = useState("");
   var [bits, setBits] = useState(false);
@@ -554,257 +591,258 @@ function AddMerch(props) {
         Add Product
       </button>
       {showModal && (
-        <div
-          id="authentication-modal"
-          tabIndex="-1"
-          className="fixed z-40 inset-0 flex items-center justify-center w-full p-4 backdrop-blur overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] md:h-full"
-        >
-          <div className="relative w-full h-full max-w-md md:h-auto">
-            <div className="relative bg-white rounded-lg shadow dark:bg-gray-700">
-              <button
-                type="button"
-                className="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-800 dark:hover:text-white"
-                data-modal-hide="authentication-modal"
-                onClick={() => {
-                  setShowModal(false);
-                }}
-              >
-                <svg
-                  aria-hidden="true"
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  xmlns="http://www.w3.org/2000/svg"
+        <div className="oveflow-y-scroll">
+          <div
+            id="authentication-modal"
+            tabIndex="-1"
+            className="fixed z-40 inset-0 flex items-center justify-center w-full p-4 backdrop-blur overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] md:h-full"
+          >
+            <div className="relative pt-20 w-full h-full max-w-[50vw] md:h-auto">
+              <div className="relative bg-white rounded-lg shadow dark:bg-gray-700">
+                <button
+                  type="button"
+                  className="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-800 dark:hover:text-white"
+                  data-modal-hide="authentication-modal"
+                  onClick={() => {
+                    setShowModal(false);
+                  }}
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  ></path>
-                </svg>
-                <span className="sr-only">Close modal</span>
-              </button>
-              <div className="px-6 py-2 lg:px-8">
-                <h3 className="mb-4 text-xl font-medium text-gray-900 dark:text-white">
-                  Add new item
-                </h3>
+                  <svg
+                    aria-hidden="true"
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    ></path>
+                  </svg>
+                  <span className="sr-only">Close modal</span>
+                </button>
+                <div className="px-6 py-2 lg:px-8">
+                  <h3 className="mb-4 text-xl font-medium text-gray-900 dark:text-white">
+                    Add new item
+                  </h3>
 
-                <ImageGrid
-                  images={images}
-                  setImages={setImages}
-                  setThumbnail={setThumbnail}
-                  thumbnail={thumbnail}
-                />
-                <form className="space-y-2" action="#">
-                  <div className="flex justify-between">
-                    <div className="flex items-start">
-                      <div className="flex items-center h-4">
-                        <input
-                          id="remember"
-                          type="checkbox"
-                          value=""
-                          className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
-                          required
-                          onChange={(e) => {
-                            setBits(e.target.checked);
-                          }}
-                        />
+                  <ImageGrid
+                    images={images}
+                    setImages={setImages}
+                    setThumbnail={setThumbnail}
+                    thumbnail={thumbnail}
+                  />
+                  <form className="space-y-2" action="#">
+                    <div className="flex justify-between">
+                      <div className="flex items-start">
+                        <div className="flex items-center h-4">
+                          <input
+                            id="remember"
+                            type="checkbox"
+                            value=""
+                            className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-600 dark:border-gray-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
+                            required
+                            onChange={(e) => {
+                              setBits(e.target.checked);
+                            }}
+                          />
+                        </div>
+                        <label
+                          for="remember"
+                          className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                        >
+                          Can be bought with bits
+                        </label>
                       </div>
-                      <label
-                        for="remember"
-                        className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
-                      >
-                        Can be bought with bits
-                      </label>
                     </div>
-                  </div>
-                  <div className="flex flex-row gap-2">
-                    <div className="w-full">
-                      <label
-                        for="helper-text"
-                        class="block text-sm text-left font-medium text-gray-900 dark:text-white"
-                      >
-                        Title
-                      </label>
-                      <input
-                        type="text"
-                        name="title"
-                        id="email"
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                        placeholder="Title"
-                        required
-                        onChange={(e) => {
-                          setTitle(e.target.value);
-                        }}
-                      />
-                    </div>
-                    <div className="w-full">
-                      <label
-                        for="helper-text"
-                        class="block text-sm text-left font-medium text-gray-900 dark:text-white"
-                      >
-                        Category
-                      </label>
-                      <select
-                        id="cats"
-                        required
-                        onChange={(e) => {
-                          setCat(e.target.value);
-                        }}
-                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                      >
-                        <option value="">Select Product Category</option>
-                        <option value={"No Category"}>{"No Category"}</option>
-                        {cats.map((c, index) => (
-                          <option index={index} value={c.name}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="flex flex-row gap-2">
-                    <div>
-                      <label
-                        for="helper-text"
-                        class="block text-sm text-left font-medium text-gray-900 dark:text-white"
-                      >
-                        Price
-                      </label>
-                      <input
-                        type="Number"
-                        name="price"
-                        id="email"
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                        placeholder="Price"
-                        required
-                        onChange={(e) => {
-                          setPrice(e.target.value);
-                        }}
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        for="helper-text"
-                        class="block text-sm text-left font-medium text-gray-900 dark:text-white"
-                      >
-                        Discount
-                      </label>
-                      <input
-                        type="Number"
-                        name="discount"
-                        id="email"
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                        placeholder="Discount"
-                        required
-                        onChange={(e) => {
-                          setDiscount(e.target.value);
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label
-                      for="helper-text"
-                      class="block text-sm text-left font-medium text-gray-900 dark:text-white"
-                    >
-                      Link to console
-                    </label>
-                    <input
-                      type="text"
-                      name="discount"
-                      id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                      placeholder="Link to console"
-                      required
-                      onChange={(e) => {
-                        setLink(e.target.value);
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex flex-row gap-2">
-                    <div className="w-full">
-                      <label
-                        for="helper-text"
-                        class="block text-sm text-left font-medium text-gray-900 dark:text-white"
-                      >
-                        Quantity
-                      </label>
-                      <input
-                        type="Number"
-                        name="discount"
-                        id="email"
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
-                        placeholder="Quantity"
-                        required
-                        onChange={(e) => {
-                          setQuantity(e.target.value);
-                        }}
-                      />
-                    </div>
-                    {bits && (
+                    <div className="flex flex-row gap-2">
                       <div className="w-full">
                         <label
                           for="helper-text"
                           class="block text-sm text-left font-medium text-gray-900 dark:text-white"
                         >
-                          Bits Limit
+                          Title
+                        </label>
+                        <input
+                          type="text"
+                          name="title"
+                          id="email"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                          placeholder="Title"
+                          required
+                          onChange={(e) => {
+                            setTitle(e.target.value);
+                          }}
+                        />
+                      </div>
+                      <div className="w-full">
+                        <label
+                          for="helper-text"
+                          class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                        >
+                          Category
+                        </label>
+                        <select
+                          id="cats"
+                          required
+                          onChange={(e) => {
+                            setCat(e.target.value);
+                          }}
+                          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        >
+                          <option value="">Select Product Category</option>
+                          <option value={"No Category"}>{"No Category"}</option>
+                          {cats.map((c, index) => (
+                            <option index={index} value={c.name}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex flex-row gap-2">
+                      <div>
+                        <label
+                          for="helper-text"
+                          class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                        >
+                          Price
                         </label>
                         <input
                           type="Number"
                           name="price"
                           id="email"
-                          placeholder="Bits Limit"
                           className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                          placeholder="Price"
                           required
-                          min={0}
-                          max={price * props.conversionRate}
                           onChange={(e) => {
-                            if (e.target.value < 0) {
-                              setBitLimits(0);
-                            } else if (
-                              e.target.value >
-                              price * props.conversionRate
-                            ) {
-                              setBitLimits(price * props.conversionRate);
-                            } else {
-                              setBitLimits(e.target.value);
-                            }
+                            setPrice(e.target.value);
                           }}
                         />
                       </div>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      for="helper-text"
-                      class="block text-sm text-left font-medium text-gray-900 dark:text-white"
-                    >
-                      Description
-                    </label>
 
-                    <WysiwygEditor
-                      text={description}
-                      setText={setDescription}
-                    />
-                  </div>
+                      {/* <div>
+                        <label
+                          for="helper-text"
+                          class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                        >
+                          Discount
+                        </label>
+                        <input
+                          type="Number"
+                          name="discount"
+                          id="email"
+                          value={discount}
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                          placeholder="Discount"
+                          required
+                          onChange={(e) => {
+                            if (e.target.value >= 0 && e.target.value <= 100)
+                              setDiscount(e.target.value);
+                          }}
+                        />
+                      </div> */}
 
-                  <div className="flex justify-space">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        if (onSubmit(e)) {
-                          setShowModal(false);
-                        }
-                      }}
-                      className="w-full ml-1 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                    >
-                      Add to Store
-                    </button>
-                  </div>
-                </form>
+                      <div className="w-full">
+                        <label
+                          for="helper-text"
+                          class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                        >
+                          Quantity
+                        </label>
+                        <input
+                          type="Number"
+                          name="discount"
+                          id="email"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                          placeholder="Quantity"
+                          required
+                          onChange={(e) => {
+                            setQuantity(e.target.value);
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-row gap-2">
+                      {bits && (
+                        <div className="">
+                          <label
+                            for="helper-text"
+                            class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                          >
+                            Bits Limit
+                          </label>
+                          <input
+                            type="Number"
+                            name="price"
+                            id="email"
+                            placeholder="Bits Limit"
+                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                            required
+                            min={0}
+                            max={price * props.conversionRate}
+                            onChange={(e) => {
+                              if (
+                                e.target.value >= 0 &&
+                                e.target.value <= price * props.conversionRate
+                              ) {
+                                setBitLimits(e.target.value);
+                              }
+                            }}
+                          />
+                        </div>
+                      )}
+                      <div className="w-full">
+                        <label
+                          for="helper-text"
+                          class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                        >
+                          Link to console
+                        </label>
+                        <input
+                          type="text"
+                          name="discount"
+                          id="email"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                          placeholder="Link to console"
+                          required
+                          onChange={(e) => {
+                            setLink(e.target.value);
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        for="helper-text"
+                        class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+                      >
+                        Description
+                      </label>
+
+                      <WysiwygEditor
+                        text={description}
+                        setText={setDescription}
+                      />
+                    </div>
+
+                    <div className="flex justify-space">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          if (onSubmit(e)) {
+                            setShowModal(false);
+                          }
+                        }}
+                        className="w-full ml-1 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                      >
+                        Add to Store
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
           </div>

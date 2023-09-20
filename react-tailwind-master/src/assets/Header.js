@@ -38,6 +38,22 @@ function DropDown(props) {
           <div className="py-1">
             <Menu.Item>
               {({ active }) => (
+                <a href="/thewall" className="cursor-pointer">
+                  <li
+                    className={classNames(
+                      active
+                        ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        : "text-gray-700 dark:text-gray-400",
+                      "block px-4 py-2 text-sm"
+                    )}
+                  >
+                    Museum
+                  </li>
+                </a>
+              )}
+            </Menu.Item>
+            <Menu.Item>
+              {({ active }) => (
                 <a
                   target="_blank"
                   href="https://discord.gg/tYQ7yzN6Jf"
@@ -137,6 +153,7 @@ const Header = (props) => {
   const [currentPage, setCurrentPage] = useState(
     sessionStorage.getItem("currentPage") || "Home"
   );
+  const [conversionRate, setConversionRate] = useState(100);
 
   var [total, setTotal] = useState(0);
   var profImage =
@@ -145,7 +162,17 @@ const Header = (props) => {
       ? JSON.parse(localStorage.getItem("profileImage"))
       : icon;
 
+  function fetchConversionRate() {
+    axios
+      .get(process.env.REACT_APP_API_BASE_URL + "/conversionRate")
+      .then((response) => {
+        if (response.status === 200) {
+          setConversionRate(response.data);
+        }
+      });
+  }
   useEffect(() => {
+    console.log(props.reload);
     if ("cartID" in sessionStorage) {
       var config = {
         method: "post",
@@ -165,11 +192,39 @@ const Header = (props) => {
           }
         });
     }
+    // setTotal(
+    //   "cartLength" in sessionStorage
+    //     ? JSON.parse(sessionStorage.getItem("cartLength"))
+    //     : 0
+    // );
+
+    // const handleSessionStorageChange = () => {
+    //   // Handle the change in sessionStorage here
+
+    //   setTotal(
+    //     "cartLength" in sessionStorage
+    //       ? JSON.parse(sessionStorage.getItem("cartLength"))
+    //       : 0
+    //   );
+    //   console.log("SessionStorage has changed");
+    // };
+
+    // window.addEventListener("sessionStorageChange", handleSessionStorageChange);
+
+    // Clean up the event listener when the component unmounts
+    // return () => {
+    //   window.removeEventListener(
+    //     "sessionStorageChange",
+    //     handleSessionStorageChange
+    //   );
+    // };
   }, []);
 
   useEffect(() => {
     sessionStorage.setItem("currentPage", currentPage);
-  }, [currentPage]);
+    fetchBitAwards();
+    fetchConversionRate();
+  }, [currentPage, showModal]);
 
   const displayMenu = () => {
     navMenu.current.classList.toggle("!translate-x-0");
@@ -274,17 +329,17 @@ const Header = (props) => {
                 </li>
               </Link>
               <Link
-                to="/thewall"
+                to="/services"
                 style={{ textDecoration: "none" }}
                 onClick={() => {
-                  handleCurrentPage("Museum");
+                  handleCurrentPage("Services");
                 }}
               >
                 <li className="mb-5 lg:mb-0 lg:mx-4 hover:text-blue-600 lg:h-inherit lg:flex dark:text-white lg:items-center cursor-pointer lg:relative lg:before:content-[attr(before)] before:absolute before:-bottom-1 before:left-0 before:h-1 before:bg-orange before:w-0 hover:before:w-full before:transition-all lg:hover:text-very-dark-blue">
-                  {currentPage === "Museum" ? (
-                    <span className="text-lg font-bold">Museum</span>
+                  {currentPage === "Services" ? (
+                    <span className="text-lg font-bold">Services</span>
                   ) : (
-                    "Museum"
+                    "Services"
                   )}
                 </li>
               </Link>
@@ -399,7 +454,7 @@ const Header = (props) => {
               </form>
             </div> */}
 
-            {!props.hideCart && (
+            {total > 0 && !props.hideCart && (
               <div className="cart-container">
                 <div className="cart-wrapper mx-2 lg:mt-2 relative">
                   {total > 0 && (
@@ -566,6 +621,12 @@ const Header = (props) => {
                   </button>
                 </div>
                 <div class="space-y-6">
+                  <p className="text-bold text-sm text-center dark:text-white">
+                    1 Pound Sterling Equals{" "}
+                    <p className="font-bold text-xl text-center dark:text-white">
+                      {conversionRate + " bits"}
+                    </p>
+                  </p>
                   <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                       <tr>

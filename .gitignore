@@ -3,4 +3,5 @@ backend/node_modules
 react-tailwind-master/build
 client_secret_862628743834-l3ir31jcdgconskvf9l4c3jfko6pemqr.apps.googleusercontent.com.json
 react-tailwind-master/.vscode/
+backend/build/
 backend/.vscode/*

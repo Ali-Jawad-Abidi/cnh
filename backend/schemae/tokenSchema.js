@@ -39,7 +39,7 @@ const tokenSchema = new mongoose.Schema({
     type: String,
     required: true,
     // Include an expiration time for access tokens
-    expires: "30m", // Automatically remove documents after 20 minutes
+    // expires: "20m", // Automatically remove documents after 20 minutes
   },
   refreshToken: {
     type: String,
@@ -47,10 +47,10 @@ const tokenSchema = new mongoose.Schema({
     // Include an expiration time for refresh tokens
     expires: "7d", // Automatically remove documents after 30 days
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+  // createdAt: {
+  //   type: Date,
+  //   default: Date.now,
+  // },
 });
 
 const Token = mongoose.model("token", tokenSchema);

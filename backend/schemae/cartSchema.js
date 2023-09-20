@@ -5,7 +5,8 @@ const CartSchema = new mongoose.Schema({
   items: [
     {
       id: { type: mongoose.Schema.Types.ObjectId, required: true },
-      bitsSpent: { type: Boolean, required: true },
+      bitsSpent: { type: Number, required: true },
+      quantity: { type: Number, required: true },
     },
   ],
   expiryTime: {

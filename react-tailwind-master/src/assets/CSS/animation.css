@@ -1,0 +1,104 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body{
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    background: #121212;
+}
+
+body,
+button{
+    font-family: sans-serif;
+    font-size: .8rem
+}
+
+.shopping-container{
+    display: flex;
+}
+.shopping-container button{
+    border: .1rem;
+    background-color: blue;
+    padding: 0 3rem;
+    transition: .2 opacity;
+}
+
+.shopping-container button:hover{
+    opacity: .9;
+    cursor: pointer;
+}
+
+
+.counter-container{
+    border: 1px solid #ffffff20;
+    border-radius: .1rem;
+    width: 3.3rem;
+    height: 3.3rem;
+    margin-right: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative
+}
+
+.counter-container svg{
+    width: 3rem;
+    color: #fff;
+}
+
+.counter-container span{
+    user-select: none;
+    position: absolute;
+    background: #ff4754;
+    width: 1.3rem;
+    height: 1.3rem;
+    font-size:  .8rem;
+    border-radius: 50%;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    top: .2rem;
+    right: .3rem;
+}
+
+.counter-container span:not(.animated-counter){
+    display: none;
+}
+
+.counter-container span .animated-counter{
+    animation: count .4s ease-in-out;
+}
+
+@keyframes count{
+    from{
+        top: .2rem;
+        right: -1.8rem;
+        transform: rotate(120deg);
+    }
+        25% {
+            top: -.2rem;
+            right: -1.2rem;
+            transform: rotate(80deg);
+        }
+                50% {
+                    top: -.4rem;
+                    right: -.6rem;
+                    transform: rotate(60deg);
+                }
+                                75% {
+                                    top: -.4rem;
+                                    right: 0rem;
+                                    transform: rotate(30deg);
+                                }
+                                                                100%  {
+                                                                    top: .2rem;
+                                                                    right: 3rem;
+                                                                    transform: rotate(0deg);
+                                                                }
+}

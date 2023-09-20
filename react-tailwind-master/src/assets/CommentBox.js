@@ -5,12 +5,20 @@ import React from "react";
 import icon from "./img/defaulticon.webp";
 
 export default function CommentBox(props) {
+  console.log(props);
   var [text, setText] = useState("");
   var [comments, setComments] = useState([]);
+  console.log(comments);
 
   var [isAdmin, setIsAdmin] = useState(false);
-  var id = JSON.parse(localStorage.getItem("userid")) || null;
-  var token = JSON.parse(localStorage.getItem("token")).token || null;
+  var id =
+    "userid" in localStorage
+      ? JSON.parse(localStorage.getItem("userid"))
+      : null;
+  var token =
+    "token" in localStorage
+      ? JSON.parse(localStorage.getItem("token")).token
+      : null;
 
   useEffect(() => {
     if (props.comments !== undefined && props.comments.length > 0) {
@@ -22,6 +30,7 @@ export default function CommentBox(props) {
 
       axios(config).then(function (response) {
         if (response.status === 200) {
+          console.log(response.data);
           setComments(response.data);
         }
       });
@@ -89,8 +98,6 @@ export default function CommentBox(props) {
       }
     });
   }
-
-  console.log(props);
 
   if ("userid" in localStorage)
     return (
@@ -244,7 +251,11 @@ export default function CommentBox(props) {
                       {comment.date || "Feb. 12, 2022"}
                     </span>
                   </div>
+
                   {/* </Link> */}
+                </div>
+                <div className="ml-6 text-left dark:text-gray-300">
+                  {comment.text}
                 </div>
 
                 <hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700"></hr>

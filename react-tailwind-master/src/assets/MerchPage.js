@@ -9,6 +9,7 @@ import React from "react";
 import Breadcrumb from "./BreadCrumb";
 import { useLocation } from "react-router-dom";
 import HtmlParser from "./HtmlParser";
+import BitScheme from "./BitScheme";
 
 export function DesktopLightBox(props) {
   var images = props.item.images;
@@ -89,6 +90,7 @@ export function DesktopLightBox(props) {
 
 function MobileSlider(props) {
   var images = props.item.images;
+  console.log(images);
   var [currentIndex, setCurrentIndex] = useState(0);
   var [previewImg, setPreviewImg] = useState(images[currentIndex]);
   const prevSlide = () => {
@@ -137,8 +139,13 @@ function DesktopPreview(props) {
 
   return (
     <>
-      <div className="preview xl:min-w-md max-w-3xl rounded-2xl overflow-hidden cursor-pointer">
-        <img onClick={props.open} src={previewImg} alt="product-preview" />
+      <div className="preview xl:min-w-md w-full max-w-3xl rounded-2xl overflow-hidden cursor-pointer">
+        <img
+          onClick={props.open}
+          src={previewImg}
+          alt="product-preview"
+          className="object-cover min-w-[35vw] h-[65vh]"
+        />
       </div>
       <div className="thumbnails flex flex-row gap-1 mt-8 ">
         {thumbnails.map((img, index) => (
@@ -164,6 +171,7 @@ function ProductDetails(props) {
   var description = props.item.description;
   var images = props.item.images;
   var link = props.item.link;
+
   const [totalQuantity, setTotalQuantity] = useState(props.item.quantity);
   const [conversionRate, setConversionRate] = useState(1);
   const [bitsLimit, setBitsLimit] = useState(props.item.bitsLimit);
@@ -171,47 +179,58 @@ function ProductDetails(props) {
     "cartID" in sessionStorage ? sessionStorage.getItem("cartID") : undefined
   );
   const addCart = (newItem) => {
-    var toSend = [];
-    newItem.map((it) => {
-      toSend.push({ id: it.id, bitsSpent: it.bitsSpent });
-    });
-    var config = {
-      method: "post",
-      url: process.env.REACT_APP_API_BASE_URL + "/addCart",
-      data: {
-        user: JSON.parse(localStorage.getItem("userid")),
-        cart: toSend,
-        cartId: cartId,
-      },
-    };
+    return new Promise((resolve, reject) => {
+      var toSend = [];
+      // newItem.map((it) => {
+      //   toSend.push({ id: it.id, bitsSpent: it.bitsSpent });
+      // });
 
-    axios(config)
-      .then((response) => {
-        if (response.status === 200) {
-          if (response.data.cartId) {
-            setCartId(response.data);
-            sessionStorage.setItem("cartID", response.data.cartId);
+      var config = {
+        method: "post",
+        url: process.env.REACT_APP_API_BASE_URL + "/addCart",
+        data: {
+          user: JSON.parse(localStorage.getItem("userid")),
+          cart: newItem,
+          cartId: cartId,
+        },
+      };
+
+      axios(config)
+        .then((response) => {
+          if (response.status === 200) {
+            if (response.data.cartId) {
+              setCartId(response.data);
+              sessionStorage.setItem("cartID", response.data.cartId);
+              sessionStorage.setItem("cartLength", toSend.length);
+            }
+            resolve(true); // Resolve the Promise with true for success
+          } else {
+            reject("Request failed with status " + response.status);
           }
-        }
-      })
-      .catch((error) => {
-        alert(error.response.data);
-      });
+        })
+        .catch((error) => {
+          reject(error); // Reject the Promise with the error message
+        });
+    });
   };
-
+  const [discount, setDiscount] = useState(0);
   const [discountedPrice, setDiscountedPrice] = useState(
-    props.item.discount > 0
-      ? props.item.price - props.item.price * (props.item.discount / 100)
-      : props.item.price
+    // props.item.discount > 0
+    //   ? props.item.price - props.item.price * (props.item.discount / 100)
+    //   :
+    props.item.price
   );
   const [userBits, setUserBits] = useState(0);
   const [useBits, setUseBits] = useState(false);
+  const [bitsUsed, setBitsUsed] = useState(0);
 
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     fetchConversionRate();
-    fetchUserBits();
+    if ("userid" in localStorage) {
+      fetchUserBits();
+    }
   }, []);
 
   function fetchUserBits() {
@@ -226,6 +245,7 @@ function ProductDetails(props) {
       },
     };
     axios(config).then((response) => {
+      console.log("fetched User Bits");
       if (response.status === 200) {
         setUserBits(response.data);
       }
@@ -269,49 +289,64 @@ function ProductDetails(props) {
         <div className="discount-price items-center flex">
           <div
             // ref={productPriceRef}
-            className="price text-3xl"
+            className={
+              bitsUsed > 0 ? "price text-3xl line-through" : "price text-3xl"
+            }
           >
             £{discountedPrice}
           </div>
 
-          {props.item.discount > 0 && (
+          {bitsUsed > 0 && (
             <div className="discount text-blue-700 bg-blue-200 w-max px-2 rounded mx-5 h-6">
-              {props.item.discount + "% off"}
+              £
+              {(
+                discountedPrice -
+                bitsUsed / (conversionRate * quantity)
+              ).toFixed(2)}
+            </div>
+          )}
+
+          {discount > 0 && (
+            <div className="discount text-blue-700 bg-blue-200 w-max px-2 rounded mx-5 h-6">
+              {discount + "% off"}
             </div>
           )}
         </div>
-        {props.item.discount > 0 && (
+        {discount > 0 && (
           <div className="original-price text-grayish-blue line-through lg:mt-2">
-            £{props.item.price.toFixed(2)}
+            £{price.toFixed(2)}
           </div>
         )}
       </div>
       <div className="sm:flex lg:mt-8 flex-col w-full">
-        <label
-          for="small-input"
-          class="block text-sm text-left font-medium text-gray-900 dark:text-white"
-        >
-          Quantity
-        </label>
-        <div className="quantity-container w-full bg-light-grayish-blue rounded-lg h-14 mb-4 flex items-center justify-between font-bold sm:mr-3 lg:mr-5 lg:w-1/3">
-          <input
-            min={1}
-            max={totalQuantity}
-            className="dark:bg-gray-800 block border rounded-md shadow-sm focus:ring focus:ring-opacity-50 focus:ring-blue-300"
-            type="number"
-            name="quantity"
-            value={quantity}
-            aria-label="quantity number"
-            onChange={(e) => {
-              if (e.target.value > totalQuantity) {
-                setQuantity(totalQuantity);
-              } else if (e.target.value < 0) {
-                setQuantity(0);
-              } else setQuantity(e.target.value);
-            }}
-          />
-        </div>
-        {props.item.bits && userBits > bitsLimit && (
+        {totalQuantity > 0 && (
+          <div>
+            <label
+              for="small-input"
+              class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+            >
+              Quantity
+            </label>
+            <div className="quantity-container w-full bg-light-grayish-blue rounded-lg h-14 mb-4 flex items-center justify-between font-bold sm:mr-3 lg:mr-5 lg:w-1/3">
+              <input
+                min={1}
+                max={totalQuantity}
+                className="dark:bg-gray-800 block border rounded-md shadow-sm focus:ring focus:ring-opacity-50 focus:ring-blue-300"
+                type="number"
+                name="quantity"
+                value={quantity}
+                aria-label="quantity number"
+                onChange={(e) => {
+                  if (e.target.value <= totalQuantity && e.target.value > 0) {
+                    setQuantity(e.target.value);
+                  }
+                }}
+              />
+            </div>
+          </div>
+        )}
+        {userBits > 0 && props.item.bits && (
+          // && userBits > bitsLimit
           <div className="flex flex-row">
             <div className="flex items-center h-4 justify-center mb-4">
               <input
@@ -328,50 +363,143 @@ function ProductDetails(props) {
                 for="default-checkbox"
                 class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
               >
-                Use Bits to get{" "}
-                {((bitsLimit / conversionRate / discountedPrice) * 100).toFixed(
-                  2
-                )}
-                % discount on max {Math.min(userBits % bitsLimit, quantity)}{" "}
-                items.
+                Use Bits
+                {/* to get upto{" "} */}
+                {/* {((bitsLimit / conversionRate / discountedPrice) * 100).toFixed( */}
+                {/* 2 */}
+                {/* )} */}
+                {/* % discount. */}
+                {/* on max {Math.min(userBits % bitsLimit, quantity)}{" "} items. */}
               </label>
             </div>
           </div>
-        )}{" "}
-        {userBits < bitsLimit && props.item.bits && (
+        )}
+
+        {"userid" in localStorage && userBits < 1 && (
+          <div className="text-left flex flex-row gap-2 items-center mb-2">
+            <p class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+              Earn Bits to get discounts!!!
+            </p>
+            <BitScheme />
+          </div>
+        )}
+
+        {useBits && (
+          <div>
+            <label
+              for="small-input"
+              class="block text-sm text-left font-medium text-gray-900 dark:text-white"
+            >
+              Set Bits to use max: ({Math.min(userBits, quantity * bitsLimit)})
+            </label>
+            <div className="quantity-container w-full bg-light-grayish-blue rounded-lg h-14 mb-4 flex items-center justify-between font-bold sm:mr-3 lg:mr-5 lg:w-1/3">
+              <input
+                min={0}
+                className="dark:bg-gray-800 block border rounded-md shadow-sm focus:ring focus:ring-opacity-50 focus:ring-blue-300"
+                type="number"
+                name="quantity"
+                value={bitsUsed}
+                aria-label="quantity number"
+                max={Math.min(userBits, quantity * bitsLimit)}
+                onChange={(e) => {
+                  if (
+                    // e.target.value > 0 &&
+                    e.target.value <= Math.min(userBits, quantity * bitsLimit)
+                  ) {
+                    setBitsUsed(e.target.value);
+                  }
+                }}
+              />
+            </div>
+          </div>
+        )}
+        {/* {userBits < bitsLimit && props.item.bits && (
           <label
             for="default-checkbox"
             class="text-left mb-4 text-sm font-medium text-gray-900 dark:text-gray-300"
           >
             Need {bitsLimit - userBits} more bits to get{" "}
-            {(bitsLimit / conversionRate / discountedPrice) * 100}% discount
+            {((bitsLimit / conversionRate / discountedPrice) * 100).toFixed(2)}%
+            discount
           </label>
-        )}
-        {"userid" in localStorage && (
+        )} */}
+        {"userid" in localStorage && totalQuantity > 0 && (
           <div className="flex flex-row gap-2">
             <button
-              onClick={(e) => {
-                var cart = [];
-                var maxDiscountedItems = userBits % bitsLimit;
-                console.log(discountedPrice - bitsLimit / conversionRate);
-                Array.from(Array(parseInt(quantity))).map((it, index) => {
-                  var newItem = {
-                    id: props.item._id,
-                    title: props.item.title,
-                    img: images[0],
-                    price:
-                      index < maxDiscountedItems && useBits
-                        ? discountedPrice - bitsLimit / conversionRate
-                        : discountedPrice,
-                    discount: props.item.discount,
-                    bitsSpent: index + 1 < maxDiscountedItems ? useBits : false,
-                  };
-                  cart.push(newItem);
-                });
-                setTotalQuantity(totalQuantity - quantity);
-                setQuantity(totalQuantity - quantity > 0 ? 1 : 0);
+              // onClick={(e) => {
+              //   var cart = [];
+              //   var bitsLeft = bitsUsed;
+              //   var bitsSpentHere = Math.min(bitsLeft, bitsLimit);
+              //   Array.from(Array(parseInt(quantity))).map((it, index) => {
+              //     if (useBits && bitsLeft > 0) {
+              //       var newItem = {
+              //         id: props.item._id,
+              //         title: props.item.title,
+              //         img: images[0],
+              //         price: discountedPrice - bitsSpentHere / conversionRate,
+              //         discount: discount,
+              //         bitsSpent: Math.min(bitsLeft, bitsLimit),
+              //       };
 
-                addCart(cart);
+              //       bitsLeft = bitsLeft - bitsSpentHere;
+              //     } else {
+              //       var newItem = {
+              //         id: props.item._id,
+              //         title: props.item.title,
+              //         img: images[0],
+              //         price: discountedPrice,
+              //         discount: discount,
+              //         bitsSpent: 0,
+              //       };
+              //     }
+              //     cart.push(newItem);
+              //   });
+              //   console.log(cart);
+
+              //   const ret = addCart(cart);
+              //   if (ret) {
+              //     fetchUserBits();
+              //     setBitsUsed(0);
+
+              //     setTotalQuantity(totalQuantity - quantity);
+              //     setQuantity(totalQuantity - quantity > 0 ? 1 : 0);
+
+              //     props.setShowSucces(true);
+              //     var oldLength =
+              //       "cartLength" in sessionStorage
+              //         ? JSON.parse(sessionStorage.getItem("cartLength"))
+              //         : 0;
+              //     let newLength = parseInt(oldLength) + parseInt(quantity);
+              //     sessionStorage.setItem("cartLength", newLength);
+              //     const storageChangeEvent = new Event("sessionStorageChange");
+              //     window.dispatchEvent(storageChangeEvent);
+              //     setTimeout(() => {
+              //       props.setShowSucces(false);
+              //     }, 3000); // 3000 milliseconds (3 seconds)
+              //   } else {
+              //     props.setShowFailure(true);
+              //     setTimeout(() => {
+              //       props.setShowFailure(false);
+              //     }, 3000); // 3000 milliseconds (3 seconds)
+              //   }
+
+              //   // window.location.reload();
+              // }}
+
+              onClick={() => {
+                let bitsPerItem = bitsUsed / quantity;
+
+                var newItem = {
+                  id: props.item._id,
+                  // title: props.item.title,
+                  // img: images[0],
+                  // price: discountedPrice - bitsPerItem / conversionRate,
+                  // discount: discount,
+                  bitsSpent: bitsPerItem,
+                  quantity: quantity,
+                };
+
+                addCart(newItem);
               }}
               className="cart w-full h-14 bg-blue-700 rounded-lg lg:rounded-xl mb-2 shadow-bg-blue-700 shadow-2xl text-white flex items-center justify-center hover:opacity-60"
             >
@@ -414,6 +542,9 @@ export default function MerchPage() {
   const [product, setProduct] = useState(null);
   const [showLightBox, setShowLightBox] = useState(false);
 
+  const [showSucces, setShowSucces] = useState(false);
+  const [showFailure, setShowFailure] = useState(false);
+
   const close = () => {
     setShowLightBox(false);
   };
@@ -428,17 +559,129 @@ export default function MerchPage() {
     };
 
     axios(config).then(function (response) {
-      setProduct(response.data.items);
-      console.log(response.data);
-      console.log(productId);
+      setProduct(response.data.items[0]);
     });
   }, []);
 
   if (product === null) return <Loading />;
+  else if (product === undefined) {
+    return (
+      <div className="dark:bg-gray-900">
+        <Header />
+        <div className="min-h-screen">
+          <p className="text-center dark:text-white text-xl font-bold">
+            Error:
+          </p>
+          <p className="text-center dark:text-white text-sm">
+            404: Product Not Found
+          </p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+  console.log(product);
 
   return (
     <>
       <Stack>
+        {showSucces && (
+          <div
+            id="toast-danger"
+            class="fixed top-0 left-0 right-0 mx-auto w-full max-w-xs p-4 mb-4 text-gray-500 bg-white rounded-lg shadow dark:text-gray-400 dark:bg-gray-800"
+            role="alert"
+            style={{ zIndex: 9999 }} // Set a high z-index value
+          >
+            <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg dark:bg-green-800 dark:text-green-200">
+              <svg
+                class="w-5 h-5"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 8.207-4 4a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L9 10.586l3.293-3.293a1 1 0 0 1 1.414 1.414Z" />
+              </svg>
+              <span class="sr-only">Check icon</span>
+            </div>
+            <div class="ml-3 text-sm font-normal">Item added successfully.</div>
+            {/* <button
+              type="button"
+              class="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700"
+              data-dismiss-target="#toast-success"
+              aria-label="Close"
+              onClick={() => {
+                setShowSucces(false);
+              }}
+            >
+              <span class="sr-only">Close</span>
+              <svg
+                class="w-3 h-3"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 14 14"
+              >
+                <path
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
+                />
+              </svg>
+            </button> */}
+          </div>
+        )}
+
+        {showFailure && (
+          <div
+            id="toast-danger"
+            class="fixed top-0 left-0 right-0 mx-auto w-full max-w-xs p-4 mb-4 text-gray-500 bg-white rounded-lg shadow dark:text-gray-400 dark:bg-gray-800"
+            role="alert"
+            style={{ zIndex: 9999 }} // Set a high z-index value
+          >
+            <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-red-500 bg-red-100 rounded-lg dark:bg-red-800 dark:text-red-200">
+              <svg
+                class="w-5 h-5"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5Zm3.707 11.793a1 1 0 1 1-1.414 1.414L10 11.414l-2.293 2.293a1 1 0 0 1-1.414-1.414L8.586 10 6.293 7.707a1 1 0 0 1 1.414-1.414L10 8.586l2.293-2.293a1 1 0 0 1 1.414 1.414L11.414 10l2.293 2.293Z" />
+              </svg>
+              <span class="sr-only">Error icon</span>
+            </div>
+            <div class="ml-3 text-sm font-normal">Item has been deleted.</div>
+            {/* <button
+              type="button"
+              class="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex items-center justify-center h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700"
+              data-dismiss-target="#toast-danger"
+              aria-label="Close"
+              onClick={() => {
+                setShowFailure(false);
+              }}
+            >
+              <span class="sr-only">Close</span>
+              <svg
+                class="w-3 h-3"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 14 14"
+              >
+                <path
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"
+                />
+              </svg>
+            </button> */}
+          </div>
+        )}
         <div className="App font-kumbh-sans min-h-screen relative dark:bg-gray-900 dark:text-white">
           <Header />
           <Breadcrumb />
@@ -453,8 +696,12 @@ export default function MerchPage() {
             <div className="destop-preview hidden lg:block">
               <DesktopPreview open={open} item={product} />
             </div>
-            <section className="product-details container mx-auto px-6 pt-5 sm:pt-10 lg:pt-5 pb-20 lg:pb-5 lg:pr-0 lg:pl-7 xl:ml-1">
-              <ProductDetails item={product} />
+            <section className="product-details container mx-auto px-2 pt-5 sm:pt-10 lg:pt-5 pb-20 lg:pb-5 lg:pr-0 xl:ml-1">
+              <ProductDetails
+                item={product}
+                setShowSucces={setShowSucces}
+                setShowFailure={setShowFailure}
+              />
             </section>
           </main>
         </div>
